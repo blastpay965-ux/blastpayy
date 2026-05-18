@@ -1,0 +1,419 @@
+"use client";
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useWallet } from '@/context/WalletContext';
+import styles from './page.module.css';
+import { User, Wallet, History, Shield, LogOut, CheckCircle2, ShieldAlert, Key } from 'lucide-react';
+import WalletPanel from '@/components/Wallet/WalletPanel';
+
+export default function ProfilePage() {
+  const { user, isLoading, logout } = useAuth();
+  const { balance, transactions } = useWallet();
+  const router = useRouter();
+  
+  const [activeTab, setActiveTab] = useState<'overview' | 'wallet' | 'history' | 'security'>('overview');
+  const [isWalletOpen, setIsWalletOpen] = useState(false);
+  const [pinChangeSuccess, setPinChangeSuccess] = useState(false);
+
+  useEffect(() => {
+    // Only redirect after session check is complete
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#fff' }}>
+          <div style={{
+            width: '48px', height: '48px', border: '3px solid #333',
+            borderTop: '3px solid var(--accent-primary)', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem',
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
+
+  return (
+    <div className={styles.page}>
+      <div className={`container ${styles.profileContainer}`}>
+        
+        {/* Sidebar Navigation */}
+        <aside className={styles.sidebar}>
+          <div className={styles.userCard}>
+            <div className={styles.avatar}>
+              <User size={40} color="#fff" />
+            </div>
+            <h2>{user.username}</h2>
+            <span className={styles.accountNumber}>{user.accountNumber || 'GUEST-ACC'}</span>
+            {user.isGuest && <span className={styles.guestBadge}>Guest Account</span>}
+          </div>
+
+          <nav className={styles.sideNav}>
+            <button 
+              className={`${styles.navItem} ${activeTab === 'overview' ? styles.active : ''}`}
+              onClick={() => setActiveTab('overview')}
+            >
+              <User size={18}/> Overview
+            </button>
+            <button 
+              className={`${styles.navItem} ${activeTab === 'wallet' ? styles.active : ''}`}
+              onClick={() => setActiveTab('wallet')}
+            >
+              <Wallet size={18}/> Wallet & Limits
+            </button>
+            <button 
+              className={`${styles.navItem} ${activeTab === 'history' ? styles.active : ''}`}
+              onClick={() => setActiveTab('history')}
+            >
+              <History size={18}/> Betting History
+            </button>
+            <button 
+              className={`${styles.navItem} ${activeTab === 'security' ? styles.active : ''}`}
+              onClick={() => setActiveTab('security')}
+            >
+              <Shield size={18}/> Security
+            </button>
+            <button className={`${styles.navItem} ${styles.logoutBtn}`} onClick={handleLogout}>
+              <LogOut size={18}/> Sign Out
+            </button>
+          </nav>
+        </aside>
+
+        {/* Main Dashboard Area */}
+        <main className={styles.mainContent}>
+          {activeTab === 'overview' && (
+            <>
+              <h1 className={styles.title}>Account Overview</h1>
+              
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Available Balance</span>
+                  <div className={styles.statValue}>
+                    {balance.toFixed(2)} <span className={styles.currency}>NGN</span>
+                  </div>
+                  <button 
+                    className="btn btn-primary" 
+                    style={{marginTop: '1rem', width: '100%'}}
+                    onClick={() => setIsWalletOpen(true)}
+                  >
+                    Deposit Funds
+                  </button>
+                </div>
+                
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Total Transactions</span>
+                  <div className={styles.statValue}>
+                    {transactions.length}
+                  </div>
+                  <button 
+                    className="btn btn-secondary" 
+                    style={{marginTop: '1rem', width: '100%'}}
+                    onClick={() => router.push('/withdraw')}
+                  >
+                    Withdraw Funds
+                  </button>
+                </div>
+
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>VIP Rank</span>
+                  <div className={styles.statValue} style={{color: 'var(--accent-primary)'}}>
+                    Bronze Tier
+                  </div>
+                  <div style={{fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '1.25rem'}}>
+                    Next Tier: Silver (25% progress)
+                  </div>
+                </div>
+              </div>
+
+              {/* Dynamic Recents Activity Table */}
+              <div className={styles.tableSection}>
+                <div className={styles.sectionHeader}>
+                  <h2>Recent Activity</h2>
+                  <button className={styles.viewAll} onClick={() => setActiveTab('history')}>View All</button>
+                </div>
+                
+                <div className={styles.tableWrapper}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Activity Type</th>
+                        <th>Timestamp</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.length > 0 ? (
+                        transactions.slice(0, 3).map((tx) => (
+                          <tr key={tx.id}>
+                            <td>
+                              <span className={styles.gameTag}>
+                                {tx.type.toUpperCase()}
+                              </span>
+                            </td>
+                            <td>{tx.date}</td>
+                            <td className={tx.type === 'deposit' ? styles.winText : styles.loseText}>
+                              {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toFixed(2)} NGN
+                            </td>
+                            <td style={{ color: '#00e676', fontWeight: 600 }}>SUCCESSFUL</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <>
+                          <tr>
+                            <td><span className={styles.gameTag}>AVIATOR</span></td>
+                            <td>Today, 14:30</td>
+                            <td className={styles.winText}>+2,400.00 NGN</td>
+                            <td style={{ color: '#00e676', fontWeight: 600 }}>COMPLETED</td>
+                          </tr>
+                          <tr>
+                            <td><span className={styles.gameTag}>MINES</span></td>
+                            <td>Today, 14:15</td>
+                            <td className={styles.loseText}>-500.00 NGN</td>
+                            <td style={{ color: 'var(--text-secondary)' }}>LOST</td>
+                          </tr>
+                        </>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'wallet' && (
+            <>
+              <h1 className={styles.title}>Wallet & Limits</h1>
+              
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard} style={{ gridColumn: 'span 2' }}>
+                  <span className={styles.statLabel}>Available Balance</span>
+                  <div className={styles.statValue} style={{ fontSize: '3rem', margin: '0.5rem 0' }}>
+                    ₦{balance.toFixed(2)}
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                    <button 
+                      className="btn btn-primary"
+                      style={{ flex: 1 }}
+                      onClick={() => setIsWalletOpen(true)}
+                    >
+                      Instant Deposit
+                    </button>
+                    <button 
+                      className="btn btn-secondary"
+                      style={{ flex: 1 }}
+                      onClick={() => router.push('/withdraw')}
+                    >
+                      Instant Withdrawal
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>24h Payout Limits</span>
+                  <div className={styles.statValue} style={{ fontSize: '1.5rem', color: 'var(--accent-primary)', marginTop: '0.5rem' }}>
+                    ₦500,000.00
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>
+                    Level 1 verified threshold limits. Complete KYC to lift limits.
+                  </div>
+                </div>
+              </div>
+
+              {/* Transactions Ledger */}
+              <div className={styles.tableSection}>
+                <div className={styles.sectionHeader}>
+                  <h2>Deposit & Withdrawal Ledger</h2>
+                </div>
+                
+                <div className={styles.tableWrapper}>
+                  {transactions.length > 0 ? (
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Transaction ID</th>
+                          <th>Type</th>
+                          <th>Amount (NGN)</th>
+                          <th>Timestamp</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactions.map((tx) => (
+                          <tr key={tx.id}>
+                            <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{tx.id}</td>
+                            <td>
+                              <span 
+                                className={styles.gameTag}
+                                style={{
+                                  backgroundColor: tx.type === 'deposit' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 77, 77, 0.1)',
+                                  color: tx.type === 'deposit' ? 'var(--accent-primary)' : 'var(--accent-danger)'
+                                }}
+                              >
+                                {tx.type.toUpperCase()}
+                              </span>
+                            </td>
+                            <td className={tx.type === 'deposit' ? styles.winText : styles.loseText} style={{ fontWeight: 700 }}>
+                              ₦{tx.amount.toFixed(2)}
+                            </td>
+                            <td>{tx.date}</td>
+                            <td style={{ color: '#00e676', fontWeight: 700 }}>SUCCESSFUL</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
+                      No deposits or withdrawals recorded yet. Click <strong>Instant Deposit</strong> above to fund your wallet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'history' && (
+            <>
+              <h1 className={styles.title}>Betting History</h1>
+              
+              <div className={styles.tableSection}>
+                <div className={styles.sectionHeader}>
+                  <h2>All Provably Fair Game Rounds</h2>
+                </div>
+                
+                <div className={styles.tableWrapper}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Game ID</th>
+                        <th>Bet Amount</th>
+                        <th>Auto target</th>
+                        <th>Outcome</th>
+                        <th>Earnings Payout</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span className={styles.gameTag}>Aviator Crash</span></td>
+                        <td>₦1,000.00</td>
+                        <td>2.00x</td>
+                        <td className={styles.winText}>2.40x (Cashed Out)</td>
+                        <td className={styles.winText}>+₦2,400.00</td>
+                      </tr>
+                      <tr>
+                        <td><span className={styles.gameTag}>Mines Gem</span></td>
+                        <td>₦500.00</td>
+                        <td>Manual</td>
+                        <td className={styles.loseText}>Hit Landmine</td>
+                        <td className={styles.loseText}>-₦500.00</td>
+                      </tr>
+                      <tr>
+                        <td><span className={styles.gameTag}>Aviator Crash</span></td>
+                        <td>₦2,000.00</td>
+                        <td>1.50x</td>
+                        <td className={styles.winText}>1.50x (Auto Payout)</td>
+                        <td className={styles.winText}>+₦3,000.00</td>
+                      </tr>
+                      <tr>
+                        <td><span className={styles.gameTag}>Wheel Spin</span></td>
+                        <td>₦200.00</td>
+                        <td>Manual</td>
+                        <td className={styles.winText}>2.00x Gray Sector</td>
+                        <td className={styles.winText}>+₦400.00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'security' && (
+            <>
+              <h1 className={styles.title}>Security Controls</h1>
+              
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Security Shield</span>
+                  <div style={{ fontSize: '1.1rem', color: '#00e676', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <CheckCircle2 size={16} /> Active SSL & 2FA
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.75rem' }}>
+                    All payout operations are encrypted using SHA-256 and verified through Flutterwave gateway.
+                  </div>
+                </div>
+              </div>
+
+              {/* Password resetting mock form */}
+              <div className={styles.tableSection}>
+                <div className={styles.sectionHeader}>
+                  <h2>Change Password / Secret PIN</h2>
+                </div>
+                
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setPinChangeSuccess(true);
+                    setTimeout(() => setPinChangeSuccess(false), 4000);
+                  }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '400px' }}
+                >
+                  <div>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.35rem' }}>
+                      Current Password / PIN
+                    </label>
+                    <input 
+                      type="password" 
+                      defaultValue="••••"
+                      style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: '#fff', padding: '0.6rem 0.8rem', borderRadius: '4px' }} 
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.35rem' }}>
+                      New Password / PIN
+                    </label>
+                    <input 
+                      type="password" 
+                      placeholder="Enter new alphanumeric password"
+                      style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--border-color)', color: '#fff', padding: '0.6rem 0.8rem', borderRadius: '4px' }} 
+                      required
+                    />
+                  </div>
+
+                  {pinChangeSuccess && (
+                    <div style={{ color: '#00e676', fontSize: '0.85rem', fontWeight: 600 }}>
+                      ✓ Your account password has been updated successfully!
+                    </div>
+                  )}
+
+                  <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start', marginTop: '0.5rem' }}>
+                    Save Credentials
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+        </main>
+
+      </div>
+
+      <WalletPanel isOpen={isWalletOpen} onClose={() => setIsWalletOpen(false)} />
+    </div>
+  );
+}

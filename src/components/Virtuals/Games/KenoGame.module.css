@@ -1,0 +1,112 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+  margin-bottom: 2rem;
+}
+
+.numberTile {
+  width: 50px;
+  height: 50px;
+  background-color: #2a2e38;
+  border: 2px solid #3b4150;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.numberTile:not(:disabled):hover {
+  background-color: #3b4150;
+  transform: translateY(-2px);
+}
+
+.numberTile:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.selected {
+  background-color: rgba(163, 103, 255, 0.2);
+  border-color: #a367ff;
+  color: #a367ff;
+  box-shadow: 0 0 10px rgba(163, 103, 255, 0.3);
+}
+
+.drawn {
+  background-color: #ff9800;
+  border-color: #ff9800;
+  color: #000;
+  animation: popIn 0.3s ease-out;
+}
+
+.hit {
+  background-color: #00e676;
+  border-color: #00e676;
+  color: #000;
+  animation: popIn 0.3s ease-out;
+  box-shadow: 0 0 15px #00e676;
+}
+
+.paytable {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.payItem {
+  background-color: #1a1d24;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid #2a2e38;
+}
+
+.payItem.active {
+  background-color: rgba(0, 230, 118, 0.2);
+  border-color: #00e676;
+}
+
+.payHits { color: #888; font-size: 0.8rem; text-transform: uppercase; }
+.payMult { color: #fff; font-weight: bold; }
+.payItem.active .payHits, .payItem.active .payMult { color: #00e676; }
+
+.gameEndOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0,0,0,0.9);
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #333;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+.winText { color: #00e676; font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+.loseText { color: #ff4444; font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+
+@keyframes popIn {
+  0% { transform: scale(0.5); }
+  100% { transform: scale(1); }
+}

@@ -1,0 +1,5 @@
+{
+  "aiAutoSettle": true,
+  "aiSettleDelayMs": 8000,
+  "aiConfidenceThreshold": 0.95
+}

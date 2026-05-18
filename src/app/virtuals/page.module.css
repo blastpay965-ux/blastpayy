@@ -1,0 +1,140 @@
+.page {
+  padding-bottom: 4rem;
+}
+
+.hero {
+  background: linear-gradient(to right, rgba(15, 17, 21, 1) 0%, rgba(15, 17, 21, 0.8) 100%), 
+              url('https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?q=80&w=2000&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  padding: 4rem 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.heroContent h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.highlight {
+  color: var(--accent-primary);
+  text-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+}
+
+.heroContent p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.gamesSection {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  min-width: 0; /* CRITICAL FOR MOBILE: Prevent grid item blowout */
+}
+
+.gameWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0; /* CRITICAL FOR MOBILE: Allow flex container to shrink below content width */
+}
+
+.gameHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bg-tertiary);
+  padding: 1rem 1.5rem;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.gameHeader h2 {
+  font-size: 1.25rem;
+}
+
+.liveIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: rgba(0,0,0,0.2);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+.infoSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.infoCard {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+}
+
+.infoCard h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.infoCard h3::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 16px;
+  background-color: var(--accent-primary);
+  border-radius: 2px;
+}
+
+.infoCard ol {
+  padding-left: 1.25rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.infoCard p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+@media (max-width: 992px) {
+  .gamesSection {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    display: none !important;
+  }
+  .gameHeader {
+    display: none !important;
+  }
+  .gamesSection {
+    padding-top: 1rem;
+    gap: 1rem;
+  }
+}

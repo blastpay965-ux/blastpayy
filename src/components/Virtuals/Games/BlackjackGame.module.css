@@ -1,0 +1,100 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 3rem;
+  background-color: #0b3d1f;
+  border-radius: 12px;
+  border: 4px solid #072b14;
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+}
+
+.tableSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.label {
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background-color: rgba(0,0,0,0.5);
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+}
+
+.score {
+  color: #00e676;
+  margin-left: 0.5rem;
+}
+
+.cardsContainer {
+  display: flex;
+  gap: -2rem; /* Overlap cards slightly */
+}
+
+.playingCard {
+  width: 100px;
+  height: 150px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: -5px 5px 10px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.3s;
+  margin-right: -40px; /* Overlap */
+}
+
+.playingCard:last-child {
+  margin-right: 0;
+}
+
+.cardRed { color: #e53935; }
+.cardBlack { color: #111; }
+
+.cardRank { font-size: 2rem; font-weight: bold; }
+.cardSuit { font-size: 3rem; }
+
+.hiddenCard {
+  background: repeating-linear-gradient(45deg, #1a1d24, #1a1d24 10px, #2a2e38 10px, #2a2e38 20px);
+  border: 2px solid #111;
+  color: transparent;
+}
+
+.hiddenCard * {
+  display: none;
+}
+
+.actionRow {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.gameEndOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0,0,0,0.9);
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #333;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+.winText { color: #00e676; font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+.loseText { color: #ff4444; font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+.pushText { color: #888; font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }

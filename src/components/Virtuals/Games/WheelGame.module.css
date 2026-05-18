@@ -1,0 +1,90 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.wheelWrapper {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wheelPointer {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 30px solid #fff;
+  z-index: 10;
+  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+}
+
+.wheel {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 8px solid #2a2e38;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0,0,0,0.8);
+  transition: transform 3s cubic-bezier(0.25, 1, 0.2, 1);
+}
+
+.segment {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 50%;
+  transform-origin: 0% 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #fff;
+  border-left: 2px solid rgba(255,255,255,0.1);
+  box-sizing: border-box;
+}
+
+.segmentContent {
+  position: absolute;
+  left: -20px;
+  transform: rotate(45deg);
+}
+
+.gameEndOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0,0,0,0.9);
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #333;
+  z-index: 20;
+  backdrop-filter: blur(8px);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.winText { color: #00e676; font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; text-shadow: 0 0 20px rgba(0, 230, 118, 0.5); }
+.loseText { color: #ff4444; font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+
+@keyframes popIn {
+  from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}

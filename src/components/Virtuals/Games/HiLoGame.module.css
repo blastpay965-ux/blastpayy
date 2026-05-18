@@ -1,0 +1,113 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.cardDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.playingCard {
+  width: 120px;
+  height: 180px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: bold;
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.playingCard.newCard {
+  animation: slideIn 0.3s ease-out;
+}
+
+.cardRed { color: #e53935; }
+.cardBlack { color: #111; }
+
+.cardRank {
+  font-size: 2.5rem;
+}
+
+.cardSuit {
+  font-size: 3.5rem;
+}
+
+.gameEndOverlay {
+  background-color: rgba(0,0,0,0.8);
+  padding: 1.5rem 3rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #333;
+  margin-top: 1rem;
+}
+
+.winText { color: #00e676; font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+.loseText { color: #ff4444; font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+
+@keyframes slideIn {
+  from { transform: translateX(100px) rotate(10deg); opacity: 0; }
+  to { transform: translateX(0) rotate(0); opacity: 1; }
+}
+
+.actionRow {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.hiloBtn {
+  flex: 1;
+  padding: 1rem;
+  background-color: #2a2e38;
+  border: 1px solid #3b4150;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hiloBtn:not(:disabled):hover {
+  background-color: #3b4150;
+  border-color: var(--accent-primary);
+}
+
+.hiloBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnMult {
+  color: var(--accent-primary);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.multiplierDisplay {
+  background-color: rgba(0, 230, 118, 0.1);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  padding: 0.5rem 1.5rem;
+  border-radius: 20px;
+  color: #00e676;
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}

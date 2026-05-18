@@ -1,0 +1,100 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem;
+  padding-bottom: 3rem;
+  position: relative;
+}
+
+.board {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pegRow {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.peg {
+  width: 12px;
+  height: 12px;
+  background-color: #3b4150;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  transition: background-color 0.2s;
+}
+
+.peg.active {
+  background-color: #00e676;
+  box-shadow: 0 0 15px #00e676;
+}
+
+.binsRow {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0 10%;
+}
+
+.bin {
+  flex: 1;
+  background-color: #1a1d24;
+  border: 2px solid #2a2e38;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 1rem 0;
+  margin: 0 0.1rem;
+  border-radius: 4px;
+  position: relative;
+  transition: all 0.2s;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.bin.active {
+  transform: translateY(5px);
+  border-color: #fff;
+  color: #fff;
+}
+
+/* Bin Colors based on multiplier */
+.binHigh { background-color: rgba(255, 68, 68, 0.2); border-color: #ff4444; color: #ff4444; }
+.binMid { background-color: rgba(255, 152, 0, 0.2); border-color: #ff9800; color: #ff9800; }
+.binLow { background-color: rgba(0, 230, 118, 0.2); border-color: #00e676; color: #00e676; }
+
+.binHigh.active { background-color: #ff4444; }
+.binMid.active { background-color: #ff9800; }
+.binLow.active { background-color: #00e676; }
+
+.gameEndOverlay {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0,0,0,0.9);
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #333;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
