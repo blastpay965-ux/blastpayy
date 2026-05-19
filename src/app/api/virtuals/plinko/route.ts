@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/lib/supabase-server';
+import { createSupabaseServer, getFastUser } from '@/lib/supabase-server';
 import { getProfile, deductBalance, addBalance, getAdminConfig, createGameRound, recordBet, completeGameRound, clearGlobalRig, clearPlinkoRig } from '@/lib/dal';
 import crypto from 'crypto';
 import { isRateLimited, rateLimitedResponse, getClientIp, checkBodySize, sanitizeInput } from '@/lib/security';
@@ -29,8 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid bet amount' }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getFastUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

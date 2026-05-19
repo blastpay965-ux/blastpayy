@@ -46,12 +46,6 @@ export default function Navbar() {
                 BLAST<span className={styles.logoAccent}>PAY</span>
               </span>
             </Link>
-            <nav className={styles.desktopNav}>
-              <Link href="/" className={styles.navLink} onClick={handleLobbyClick}>
-                <Dices size={18} /> Lobby
-              </Link>
-             
-            </nav>
           </div>
 
           <div className={styles.right}>
@@ -63,8 +57,9 @@ export default function Navbar() {
             ) : (
               <>
                 <div className={styles.wallet} onClick={() => setIsWalletOpen(true)} style={{cursor: 'pointer'}}>
-                  <Wallet size={18} className={styles.walletIcon} />
-                  <span className={styles.balance}>{balance.toFixed(2)} NGN</span>
+                  <div className={styles.balanceWrapper}>
+                    <span className={styles.balance}>{balance.toFixed(2)} NGN</span>
+                  </div>
                   <button className={styles.depositBtn}>Deposit</button>
                 </div>
                 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAdminConfig, createGameRound, completeGameRound } from '@/lib/dal';
+import { getAdminConfig, createGameRound, completeGameRound, updateAdminConfig } from '@/lib/dal';
 import crypto from 'crypto';
 import { isRateLimited, getClientIp, rateLimitedResponse } from '@/lib/security';
 
@@ -47,12 +47,21 @@ async function updateGameState() {
       const maxMultiplier  = config.crashMaxMultiplier ?? 100;
       const isRigged       = config.isRigged ?? false;
       const nextOverride   = config.nextCrashMultiplier ?? null;
+      const globalRig      = config.globalRigOutcome ?? null;
 
       if (nextOverride !== null) {
+        // Admin set a specific crash point — use it once, then clear
         gameState.targetCrash = Math.max(1.00, nextOverride);
-        // Reset override: done via admin dashboard saving null
-      } else if (isRigged) {
+        // Consume the override immediately so it only fires for this round
+        updateAdminConfig({ nextCrashMultiplier: null }).catch(() => {});
+      } else if (isRigged || globalRig === 'lose') {
+        // Rigged to lose: crash at 1.00 (instant)
         gameState.targetCrash = 1.00;
+        if (globalRig) updateAdminConfig({ globalRigOutcome: null }).catch(() => {});
+      } else if (globalRig === 'win') {
+        // Rigged to win: set a very high crash point so player can easily cash out
+        gameState.targetCrash = 50.00 + Math.random() * 50;
+        updateAdminConfig({ globalRigOutcome: null }).catch(() => {});
       } else if (Math.random() < houseEdge / 100) {
         gameState.targetCrash = 1.00;
       } else {

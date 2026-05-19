@@ -29,7 +29,7 @@
 .peg {
   width: 12px;
   height: 12px;
-  background-color: #3b4150;
+  background-color: #2F4553;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0,0,0,0.5);
   transition: background-color 0.2s;
@@ -50,8 +50,8 @@
 
 .bin {
   flex: 1;
-  background-color: #1a1d24;
-  border: 2px solid #2a2e38;
+  background-color: #0F1923;
+  border: 2px solid #1A2C38;
   color: #fff;
   font-weight: 800;
   font-size: 0.8rem;

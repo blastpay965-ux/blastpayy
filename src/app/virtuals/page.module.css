@@ -29,10 +29,10 @@
 }
 
 .gamesSection {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
-  min-width: 0; /* CRITICAL FOR MOBILE: Prevent grid item blowout */
+  min-width: 0;
 }
 
 .gameWrapper {
@@ -121,9 +121,7 @@
 }
 
 @media (max-width: 992px) {
-  .gamesSection {
-    grid-template-columns: 1fr;
-  }
+  /* No changes needed as it's already flex column */
 }
 
 @media (max-width: 768px) {

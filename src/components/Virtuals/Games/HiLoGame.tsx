@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import GameLayout from '../Shared/GameLayout';
 import { useWallet } from '@/context/WalletContext';
+import { useToast } from '@/context/ToastContext';
 import styles from './HiLoGame.module.css';
 import controlStyles from '../CrashGame.module.css';
 import { ArrowDown, ArrowUp } from 'lucide-react';
@@ -19,6 +20,7 @@ interface Card {
 
 export default function HiLoGame() {
   const { balance, deductBalance, addBalance } = useWallet();
+  const { showError } = useToast();
   const [betAmount, setBetAmount] = useState('10.00');
   
   const [isPlaying, setIsPlaying] = useState(false);
@@ -48,7 +50,7 @@ export default function HiLoGame() {
 
   const startGame = async () => {
     const bet = parseFloat(betAmount);
-    if (isNaN(bet) || bet <= 0 || bet > balance) return alert('Invalid bet or insufficient funds');
+    if (isNaN(bet) || bet <= 0 || bet > balance) return showError('Invalid bet or insufficient funds');
 
     try {
       const res = await fetch('/api/virtuals/hilo', {
@@ -64,7 +66,7 @@ export default function HiLoGame() {
       setIsPlaying(true);
       setWinStatus(null);
       setMultiplier(1.00);
-    } catch (e: any) { alert(e.message || 'Failed to start game'); }
+    } catch (e: any) { showError(e.message || 'Failed to start game'); }
   };
 
   const handleGuess = async (guess: 'higher' | 'lower') => {
@@ -86,7 +88,7 @@ export default function HiLoGame() {
       } else {
         setMultiplier(data.multiplier);
       }
-    } catch (e: any) { alert(e.message || 'Failed to process guess'); }
+    } catch (e: any) { showError(e.message || 'Failed to process guess'); }
   };
 
   const handleCashout = async () => {
@@ -103,10 +105,21 @@ export default function HiLoGame() {
 
       setIsPlaying(false);
       setWinStatus('win');
-    } catch (e: any) { alert(e.message || 'Failed to cashout'); }
+    } catch (e: any) { showError(e.message || 'Failed to cashout'); }
   };
 
   const payouts = currentCard ? getPayouts(currentCard.value) : { higherMult: 0, lowerMult: 0 };
+
+  const handleBetChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setBetAmount(val);
+    }
+  };
+
+  const safeParse = (val: string) => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  };
 
   const controls = (
     <div className={controlStyles.controlPanel} style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
@@ -117,13 +130,13 @@ export default function HiLoGame() {
          <div className={controlStyles.betAdjuster}>
            <label style={{color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem'}}>Bet Amount</label>
            <div className={controlStyles.stepper}>
-             <button onClick={() => setBetAmount(p => Math.max(1, parseFloat(p)-1).toFixed(2))} disabled={isPlaying}>-</button>
-             <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)} disabled={isPlaying} />
-             <button onClick={() => setBetAmount(p => (parseFloat(p)+1).toFixed(2))} disabled={isPlaying}>+</button>
+             <button onClick={() => setBetAmount(p => Math.max(1, safeParse(p)-1).toFixed(2))} disabled={isPlaying}>-</button>
+             <input type="text" inputMode="decimal" value={betAmount} onChange={e => handleBetChange(e.target.value)} disabled={isPlaying} />
+             <button onClick={() => setBetAmount(p => (safeParse(p)+1).toFixed(2))} disabled={isPlaying}>+</button>
            </div>
            <div className={controlStyles.quickBets}>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)/2).toFixed(2))} disabled={isPlaying}>½</button>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)*2).toFixed(2))} disabled={isPlaying}>2×</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)/2).toFixed(2))} disabled={isPlaying}>½</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)*2).toFixed(2))} disabled={isPlaying}>2×</button>
              <button onClick={() => setBetAmount(balance.toFixed(2))} disabled={isPlaying}>Max</button>
            </div>
          </div>

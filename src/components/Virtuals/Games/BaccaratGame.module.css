@@ -67,7 +67,7 @@
 .cardSuit { font-size: 3rem; }
 
 .hiddenCard {
-  background: repeating-linear-gradient(45deg, #1a1d24, #1a1d24 10px, #2a2e38 10px, #2a2e38 20px);
+  background: repeating-linear-gradient(45deg, #0F1923, #0F1923 10px, #1A2C38 10px, #1A2C38 20px);
   border: 2px solid #111;
   color: transparent;
 }
@@ -103,7 +103,7 @@
 .betOption {
   flex: 1;
   padding: 0.5rem;
-  background-color: #1a1d24;
+  background-color: #0F1923;
   border: 2px solid transparent;
   color: #fff;
   border-radius: 6px;
@@ -112,7 +112,7 @@
 }
 
 .betOption:hover {
-  background-color: #2a2e38;
+  background-color: #1A2C38;
 }
 
 .betOption.selected {

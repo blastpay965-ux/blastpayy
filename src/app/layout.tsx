@@ -3,7 +3,9 @@ import './globals.css';
 import './auth.css';
 import { WalletProvider } from '@/context/WalletContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { ToastProvider } from '@/context/ToastContext';
 import Navbar from '@/components/Navbar/Navbar';
+import Sidebar from '@/components/Sidebar/Sidebar';
 import PreloaderWrapper from '@/components/Preloader/PreloaderWrapper';
 import CustomerService from '@/components/CustomerService/CustomerService';
 import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary';
@@ -27,17 +29,22 @@ export default function RootLayout({
     <html lang="en">
       <body suppressHydrationWarning>
         <AuthProvider>
-          <WalletProvider>
-            <PreloaderWrapper>
+          <ToastProvider>
+            <WalletProvider>
+              <PreloaderWrapper>
               <Navbar />
-              <main>
-                <ErrorBoundary>
-                  {children}
-                </ErrorBoundary>
-              </main>
+              <div className="app-layout">
+                <Sidebar />
+                <main className="app-main">
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
+                </main>
+              </div>
               <CustomerService />
             </PreloaderWrapper>
           </WalletProvider>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

@@ -2,10 +2,10 @@
 
 import { useWallet } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
-import { X, ArrowDownToLine, ArrowUpFromLine, History, Lock, Check, Copy, ShieldCheck, Sparkles, Loader2 } from 'lucide-react';
+import { X, ArrowDownToLine, ArrowUpFromLine, History, Lock, Check, Copy, ShieldCheck, Sparkles } from 'lucide-react';
 import styles from './WalletPanel.module.css';
 import { useState } from 'react';
-import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
+import { useFlutterwave } from 'flutterwave-react-v3';
 import Link from 'next/link';
 
 interface WalletPanelProps {
@@ -14,7 +14,7 @@ interface WalletPanelProps {
 }
 
 export default function WalletPanel({ isOpen, onClose }: WalletPanelProps) {
-  const { balance, deposit, withdraw, transactions, syncWallet } = useWallet();
+  const { balance, deposit, transactions, syncWallet } = useWallet();
   const { user, logout } = useAuth();
   
   const [amount, setAmount] = useState('5000');
@@ -22,7 +22,6 @@ export default function WalletPanel({ isOpen, onClose }: WalletPanelProps) {
   const [message, setMessage] = useState('');
 
   // Manual & Automated Bank Transfer States
-  const [depositChannel, setDepositChannel] = useState<'gateway' | 'manual'>('manual');
   const [senderInfo, setSenderInfo] = useState('');
   const [transferCode] = useState(() => Math.floor(100000 + Math.random() * 900000).toString());
   const [copiedField, setCopiedField] = useState('');
@@ -31,8 +30,6 @@ export default function WalletPanel({ isOpen, onClose }: WalletPanelProps) {
   // Manual Withdrawal States
   const [withdrawBankName, setWithdrawBankName] = useState('');
   const [withdrawAccountNo, setWithdrawAccountNo] = useState('');
-
-  if (!isOpen) return null;
 
   // Dedicated Business Account Coordinates
   const computedAccountNumber = '8055865414';
@@ -44,8 +41,8 @@ export default function WalletPanel({ isOpen, onClose }: WalletPanelProps) {
     public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY && process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY !== 'FLWPUBK_TEST-sandbox' 
       ? process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY 
       : 'FLWPUBK_TEST-3b2d9fe8ba46b2a533614974d9295cac-X',
-    tx_ref: `txn-${Date.now()}`,
-    amount: parseFloat(amount),
+    tx_ref: `txn-placeholder`,
+    amount: parseFloat(amount) || 0,
     currency: 'NGN',
     // Added 'banktransfer' to default card gateway to automatically enable automated checkouts!
     payment_options: 'card,mobilemoney,ussd,banktransfer',
@@ -63,38 +60,7 @@ export default function WalletPanel({ isOpen, onClose }: WalletPanelProps) {
 
   const handleFlutterPayment = useFlutterwave(config);
 
-  const handleDeposit = () => {
-    const val = parseFloat(amount);
-    if (val > 0) {
-      if (config.public_key === 'FLWPUBK_TEST-a2491a133df19f56247c4ddddc27be55-X' || config.public_key.includes('sandbox')) {
-        const confirmed = window.confirm(
-          `Flutterwave SDK Notice:\n\nYou need to register a free Flutterwave test account and add your real Test Public Key to .env.local to open the actual checkout modal.\n\nSimulate a successful payment of ₦${val} for now?`
-        );
-        if (confirmed) {
-          deposit(val);
-          setMessage(`Successfully deposited ₦${val}`);
-          setTimeout(() => setMessage(''), 3000);
-        }
-        return;
-      }
-
-      handleFlutterPayment({
-        callback: (response) => {
-          // Payment completed, webhook will handle fulfillment.
-          if (response.status === 'successful' || response.status === 'success' || response.tx_ref || response.transaction_id) {
-            deposit(val);
-            setMessage(`Successfully deposited ₦${val}`);
-            setTimeout(() => setMessage(''), 3000);
-          } else {
-            setMessage("Payment was not completed. Please try again.");
-            setTimeout(() => setMessage(''), 4000);
-          }
-          closePaymentModal();
-        },
-        onClose: () => {},
-      });
-    }
-  };
+  if (!isOpen) return null;
 
   const handleManualDeposit = async () => {
     const val = parseFloat(amount);
@@ -436,15 +402,6 @@ export default function WalletPanel({ isOpen, onClose }: WalletPanelProps) {
                         onClick={handleManualDeposit}
                       >
                         {isClearing ? 'Initiating Settlement Handshake...' : '✔ I Have Transferred This Amount'}
-                      </button>
-                      
-                      <button 
-                        type="button"
-                        className={`btn btn-secondary ${styles.gatewaySimulateBtn}`}
-                        disabled={isClearing}
-                        onClick={handleSimulateWebhook}
-                      >
-                        {isClearing ? '⚡ Triggering Secure Payment Webhook...' : '⚡ Authorize Instant Callback Webhook (Sandbox)'}
                       </button>
                     </div>
 

@@ -3,11 +3,13 @@
 import React, { useState } from 'react';
 import GameLayout from '../Shared/GameLayout';
 import { useWallet } from '@/context/WalletContext';
+import { useToast } from '@/context/ToastContext';
 import styles from './LimboGame.module.css';
 import controlStyles from '../CrashGame.module.css';
 
 export default function LimboGame() {
-  const { balance, deductBalance, addBalance } = useWallet();
+  const { balance, syncWallet } = useWallet();
+  const { showError } = useToast();
   const [betAmount, setBetAmount] = useState('10.00');
   const [targetMultiplier, setTargetMultiplier] = useState('2.00');
   
@@ -29,8 +31,9 @@ export default function LimboGame() {
   const handleBet = async () => {
     const bet = parseFloat(betAmount);
     const target = parseFloat(targetMultiplier);
-    if (isNaN(bet) || bet <= 0 || bet > balance) return alert('Invalid bet or insufficient funds');
-    if (isNaN(target) || target < 1.01) return alert('Target must be at least 1.01x');
+    if (isNaN(bet) || bet <= 0) return showError('Invalid bet amount.');
+    if (bet > balance) return showError('Insufficient balance to place bet.');
+    if (isNaN(target) || target < 1.01) return showError('Target must be at least 1.01x');
 
     setIsRolling(true);
     setWinStatus(null);
@@ -58,12 +61,24 @@ export default function LimboGame() {
 
       setResultMult(data.resultMult);
       setWinStatus(data.isWin ? 'win' : 'lose');
+      await syncWallet();
       
     } catch (e: any) {
       clearInterval(interval);
       setIsRolling(false);
-      alert(e.message || 'Failed to play Limbo securely');
+      showError(e.message || 'Failed to play Limbo securely');
     }
+  };
+
+  const handleBetChange = (val: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setter(val);
+    }
+  };
+
+  const safeParse = (val: string) => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   const controls = (
@@ -75,13 +90,19 @@ export default function LimboGame() {
          <div className={controlStyles.betAdjuster}>
            <label style={{color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem'}}>Bet Amount</label>
            <div className={controlStyles.stepper}>
-             <button onClick={() => setBetAmount(p => Math.max(1, parseFloat(p)-1).toFixed(2))} disabled={isRolling}>-</button>
-             <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)} disabled={isRolling} />
-             <button onClick={() => setBetAmount(p => (parseFloat(p)+1).toFixed(2))} disabled={isRolling}>+</button>
+             <button onClick={() => setBetAmount(p => Math.max(1, safeParse(p)-1).toFixed(2))} disabled={isRolling}>-</button>
+             <input 
+               type="text" 
+               inputMode="decimal"
+               value={betAmount} 
+               onChange={e => handleBetChange(e.target.value, setBetAmount)} 
+               disabled={isRolling} 
+             />
+             <button onClick={() => setBetAmount(p => (safeParse(p)+1).toFixed(2))} disabled={isRolling}>+</button>
            </div>
            <div className={controlStyles.quickBets}>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)/2).toFixed(2))}>½</button>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)*2).toFixed(2))}>2×</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)/2).toFixed(2))}>½</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)*2).toFixed(2))}>2×</button>
              <button onClick={() => setBetAmount(balance.toFixed(2))}>Max</button>
            </div>
            
@@ -89,7 +110,13 @@ export default function LimboGame() {
              <div style={{flex: 1}}>
                 <label style={{color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem'}}>Target Multiplier</label>
                 <div className={controlStyles.stepper}>
-                  <input type="number" value={targetMultiplier} onChange={e => setTargetMultiplier(e.target.value)} disabled={isRolling} />
+                  <input 
+                    type="text" 
+                    inputMode="decimal"
+                    value={targetMultiplier} 
+                    onChange={e => handleBetChange(e.target.value, setTargetMultiplier)} 
+                    disabled={isRolling} 
+                  />
                 </div>
              </div>
              <div style={{flex: 1}}>

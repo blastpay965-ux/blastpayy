@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [pinChangeSuccess, setPinChangeSuccess] = useState(false);
 
+
   useEffect(() => {
     // Only redirect after session check is complete
     if (!isLoading && !user) {
@@ -139,58 +140,46 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Dynamic Recents Activity Table */}
+              {/* Recent Activity — real transactions only */}
               <div className={styles.tableSection}>
                 <div className={styles.sectionHeader}>
                   <h2>Recent Activity</h2>
                   <button className={styles.viewAll} onClick={() => setActiveTab('history')}>View All</button>
                 </div>
-                
-                <div className={styles.tableWrapper}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>Activity Type</th>
-                        <th>Timestamp</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions.length > 0 ? (
-                        transactions.slice(0, 3).map((tx) => (
+
+                {transactions.length > 0 ? (
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Type</th>
+                          <th>Date</th>
+                          <th>Amount</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactions.slice(0, 5).map((tx) => (
                           <tr key={tx.id}>
+                            <td><span className={styles.gameTag}>{tx.type.toUpperCase()}</span></td>
+                            <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{tx.date}</td>
+                            <td className={tx.type === 'deposit' ? styles.winText : styles.loseText} style={{ fontWeight: 700 }}>
+                              {tx.type === 'deposit' ? '+' : '-'}₦{tx.amount.toFixed(2)}
+                            </td>
                             <td>
-                              <span className={styles.gameTag}>
-                                {tx.type.toUpperCase()}
-                              </span>
+                              <span style={{ background: 'rgba(0,230,118,0.12)', color: '#00e676', padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700 }}>SUCCESS</span>
                             </td>
-                            <td>{tx.date}</td>
-                            <td className={tx.type === 'deposit' ? styles.winText : styles.loseText}>
-                              {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toFixed(2)} NGN
-                            </td>
-                            <td style={{ color: '#00e676', fontWeight: 600 }}>SUCCESSFUL</td>
                           </tr>
-                        ))
-                      ) : (
-                        <>
-                          <tr>
-                            <td><span className={styles.gameTag}>AVIATOR</span></td>
-                            <td>Today, 14:30</td>
-                            <td className={styles.winText}>+2,400.00 NGN</td>
-                            <td style={{ color: '#00e676', fontWeight: 600 }}>COMPLETED</td>
-                          </tr>
-                          <tr>
-                            <td><span className={styles.gameTag}>MINES</span></td>
-                            <td>Today, 14:15</td>
-                            <td className={styles.loseText}>-500.00 NGN</td>
-                            <td style={{ color: 'var(--text-secondary)' }}>LOST</td>
-                          </tr>
-                        </>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
+                    <History size={40} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+                    <p style={{ fontSize: '0.9rem' }}>No activity yet. Place a bet or make a deposit to get started.</p>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -295,50 +284,41 @@ export default function ProfilePage() {
                 <div className={styles.sectionHeader}>
                   <h2>All Provably Fair Game Rounds</h2>
                 </div>
-                
-                <div className={styles.tableWrapper}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>Game ID</th>
-                        <th>Bet Amount</th>
-                        <th>Auto target</th>
-                        <th>Outcome</th>
-                        <th>Earnings Payout</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><span className={styles.gameTag}>Aviator Crash</span></td>
-                        <td>₦1,000.00</td>
-                        <td>2.00x</td>
-                        <td className={styles.winText}>2.40x (Cashed Out)</td>
-                        <td className={styles.winText}>+₦2,400.00</td>
-                      </tr>
-                      <tr>
-                        <td><span className={styles.gameTag}>Mines Gem</span></td>
-                        <td>₦500.00</td>
-                        <td>Manual</td>
-                        <td className={styles.loseText}>Hit Landmine</td>
-                        <td className={styles.loseText}>-₦500.00</td>
-                      </tr>
-                      <tr>
-                        <td><span className={styles.gameTag}>Aviator Crash</span></td>
-                        <td>₦2,000.00</td>
-                        <td>1.50x</td>
-                        <td className={styles.winText}>1.50x (Auto Payout)</td>
-                        <td className={styles.winText}>+₦3,000.00</td>
-                      </tr>
-                      <tr>
-                        <td><span className={styles.gameTag}>Wheel Spin</span></td>
-                        <td>₦200.00</td>
-                        <td>Manual</td>
-                        <td className={styles.winText}>2.00x Gray Sector</td>
-                        <td className={styles.winText}>+₦400.00</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+
+                {transactions.length > 0 ? (
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Type</th>
+                          <th>Date</th>
+                          <th>Amount (NGN)</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactions.map((tx) => (
+                          <tr key={tx.id}>
+                            <td><span className={styles.gameTag}>{tx.type.toUpperCase()}</span></td>
+                            <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{tx.date}</td>
+                            <td className={tx.type === 'deposit' ? styles.winText : styles.loseText} style={{ fontWeight: 700 }}>
+                              {tx.type === 'deposit' ? '+' : '-'}₦{tx.amount.toFixed(2)}
+                            </td>
+                            <td>
+                              <span style={{ background: 'rgba(0,230,118,0.12)', color: '#00e676', padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700 }}>SUCCESS</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)' }}>
+                    <History size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                    <p style={{ fontSize: '0.95rem', marginBottom: '0.5rem' }}>No game rounds yet.</p>
+                    <p style={{ fontSize: '0.85rem' }}>Head to any game and place your first bet to see your history here.</p>
+                  </div>
+                )}
               </div>
             </>
           )}

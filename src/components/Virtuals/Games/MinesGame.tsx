@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import GameLayout from '../Shared/GameLayout';
 import { useWallet } from '@/context/WalletContext';
+import { useToast } from '@/context/ToastContext';
 import styles from './MinesGame.module.css';
 import controlStyles from '../CrashGame.module.css';
 import { Diamond, Bomb, Volume2, VolumeX } from 'lucide-react';
 import { audioSystem } from '@/lib/audio';
 
 export default function MinesGame() {
-  const { balance, deductBalance, addBalance } = useWallet();
+  const { balance, syncWallet } = useWallet();
+  const { showError } = useToast();
   const [betAmount, setBetAmount] = useState('10.00');
   const [mineCount, setMineCount] = useState(3);
   
@@ -54,7 +56,7 @@ export default function MinesGame() {
 
   const startGame = async () => {
     const bet = parseFloat(betAmount);
-    if (isNaN(bet) || bet <= 0 || bet > balance) return alert('Invalid bet or insufficient funds');
+    if (isNaN(bet) || bet <= 0 || bet > balance) return showError('Invalid bet or insufficient funds');
 
     audioSystem.init();
     
@@ -75,8 +77,9 @@ export default function MinesGame() {
       setWinStatus(null);
       setGemsFound(0);
       setMultiplier(1.00);
+      await syncWallet();
     } catch (e: any) {
-      alert(e.message || 'Failed to start game securely');
+      showError(e.message || 'Failed to start game securely');
     }
   };
 
@@ -103,6 +106,7 @@ export default function MinesGame() {
         setIsPlaying(false);
         audioSystem.playBomb();
         setRevealed(Array(25).fill(true));
+        await syncWallet();
       } else if (data.status === 'gem') {
         const newGems = gemsFound + 1;
         setGemsFound(newGems);
@@ -114,7 +118,7 @@ export default function MinesGame() {
         }
       }
     } catch (e: any) {
-      alert(e.message || 'Failed to process click securely');
+      showError(e.message || 'Failed to process click securely');
     }
   };
 
@@ -136,9 +140,21 @@ export default function MinesGame() {
       setIsPlaying(false);
       audioSystem.playCashout();
       setRevealed(Array(25).fill(true));
+      await syncWallet();
     } catch (e: any) {
-      alert(e.message || 'Failed to cashout securely');
+      showError(e.message || 'Failed to cashout securely');
     }
+  };
+
+  const handleBetChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setBetAmount(val);
+    }
+  };
+
+  const safeParse = (val: string) => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   const controls = (
@@ -150,9 +166,9 @@ export default function MinesGame() {
          <div className={controlStyles.betAdjuster}>
            <label style={{color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem'}}>Bet Amount</label>
            <div className={controlStyles.stepper}>
-             <button onClick={() => setBetAmount(p => Math.max(1, parseFloat(p)-1).toFixed(2))} disabled={isPlaying}>-</button>
-             <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)} disabled={isPlaying} />
-             <button onClick={() => setBetAmount(p => (parseFloat(p)+1).toFixed(2))} disabled={isPlaying}>+</button>
+             <button onClick={() => setBetAmount(p => Math.max(1, safeParse(p)-1).toFixed(2))} disabled={isPlaying}>-</button>
+             <input type="text" inputMode="decimal" value={betAmount} onChange={e => handleBetChange(e.target.value)} disabled={isPlaying} />
+             <button onClick={() => setBetAmount(p => (safeParse(p)+1).toFixed(2))} disabled={isPlaying}>+</button>
            </div>
            
            <label style={{color: '#888', fontSize: '0.8rem', display: 'block', margin: '0.75rem 0 0.25rem'}}>Mines (1-24)</label>

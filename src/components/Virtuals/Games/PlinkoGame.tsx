@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import GameLayout from '../Shared/GameLayout';
 import { useWallet } from '@/context/WalletContext';
+import { useToast } from '@/context/ToastContext';
 import styles from './MinesGame.module.css'; 
 import controlStyles from '../CrashGame.module.css';
 import { audioSystem } from '@/lib/audio';
@@ -23,7 +24,8 @@ interface Ball {
 }
 
 export default function PlinkoGame() {
-  const { balance, deductBalance, addBalance } = useWallet();
+  const { balance, syncWallet } = useWallet();
+  const { showError } = useToast();
   const [betAmount, setBetAmount] = useState('10.00');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -107,7 +109,7 @@ export default function PlinkoGame() {
            ball.isDead = true;
            setLastWin({ mult: ball.multiplier, amount: ball.winAmount });
            audioSystem.playCashout();
-           addBalance(ball.winAmount);
+           syncWallet();
            return;
         }
 
@@ -166,11 +168,10 @@ export default function PlinkoGame() {
 
   const dropBall = async () => {
     const bet = parseFloat(betAmount);
-    if (isNaN(bet) || bet <= 0 || bet > balance) return alert('Invalid bet or insufficient funds');
+    if (isNaN(bet) || bet <= 0 || bet > balance) return showError('Invalid bet or insufficient funds');
 
     setIsPlaying(true);
     audioSystem.init();
-    deductBalance(bet);
 
     try {
       const res = await fetch('/api/virtuals/plinko', {
@@ -196,14 +197,24 @@ export default function PlinkoGame() {
         };
         ballsRef.current.push(newBall);
       } else {
-        alert(data.error);
-        addBalance(bet); // refund
+        showError(data.error);
       }
     } catch(e) {
-      addBalance(bet); // refund
+      // ignore
     } finally {
       setIsPlaying(false);
     }
+  };
+
+  const handleBetChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setBetAmount(val);
+    }
+  };
+
+  const safeParse = (val: string) => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   const controls = (
@@ -221,9 +232,9 @@ export default function PlinkoGame() {
          <div className={controlStyles.betAdjuster}>
            <label style={{color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem'}}>Bet Amount</label>
            <div className={controlStyles.stepper}>
-             <button onClick={() => setBetAmount(p => Math.max(1, parseFloat(p)-1).toFixed(2))}>-</button>
-             <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)} />
-             <button onClick={() => setBetAmount(p => (parseFloat(p)+1).toFixed(2))}>+</button>
+             <button onClick={() => setBetAmount(p => Math.max(1, safeParse(p)-1).toFixed(2))}>-</button>
+             <input type="text" inputMode="decimal" value={betAmount} onChange={e => handleBetChange(e.target.value)} />
+             <button onClick={() => setBetAmount(p => (safeParse(p)+1).toFixed(2))}>+</button>
            </div>
          </div>
          

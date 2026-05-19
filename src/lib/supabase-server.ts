@@ -51,3 +51,15 @@ export async function createSupabaseAdmin() {
     }
   );
 }
+
+/**
+ * Highly optimized helper to get the authenticated user.
+ * Uses getSession() (locally decodes JWT) instead of getUser() (remote API call).
+ * This eliminates the ~800-1000ms latency on every game action or wallet operation.
+ */
+export async function getFastUser() {
+  const supabase = await createSupabaseServer();
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user || null;
+}
+

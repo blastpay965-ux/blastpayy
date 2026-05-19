@@ -28,10 +28,11 @@ export async function POST(request: Request) {
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const deducted = await deductBalance(user.id, bet);
+    const [deducted, config] = await Promise.all([
+      deductBalance(user.id, bet),
+      getAdminConfig()
+    ]);
     if (!deducted) return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
-
-    const config = await getAdminConfig();
     
     // Rigging Override check
     let rig = config.globalRigOutcome;
@@ -49,15 +50,22 @@ export async function POST(request: Request) {
     const isWin = mult > 0;
     const winAmount = isWin ? bet * mult : 0;
 
-    if (isWin && winAmount > 0) {
-      await addBalance(user.id, winAmount);
-    }
-
-    // Secure audit logging
     const serverSeed = crypto.randomBytes(32).toString('hex');
-    const round = await createGameRound('wheel', serverSeed);
-    await recordBet(user.id, 'wheel', bet, mult, winAmount, round.id);
-    await completeGameRound(round.id, user.id, JSON.stringify({ winningIndex, mult, winAmount }));
+    const dbPromises: Promise<any>[] = [];
+    
+    if (isWin && winAmount > 0) {
+      dbPromises.push(addBalance(user.id, winAmount));
+    }
+    
+    dbPromises.push(
+      createGameRound('wheel', serverSeed).then(round => 
+        recordBet(user.id, 'wheel', bet, mult, winAmount, round.id).then(() =>
+          completeGameRound(round.id, user.id, JSON.stringify({ winningIndex, mult, winAmount }))
+        )
+      )
+    );
+
+    await Promise.all(dbPromises);
 
     return NextResponse.json({
       status: 'success',

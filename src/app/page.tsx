@@ -15,7 +15,7 @@ const CATEGORIES = [
       {
         id: 'mines',
         title: 'Mines',
-        tag: 'New',
+        tag: 'Popular',
         href: '/virtuals/mines',
       },
       {
@@ -122,6 +122,23 @@ function renderGameIllustration(gameId: string) {
             <circle cx="120" cy="50" r="2.5" fill="#ff0055" opacity="0.8" />
           </svg>
           <span className={styles.illustrationText} style={{ color: 'rgba(255, 61, 127, 0.7)' }}>CRASH JET</span>
+        </div>
+      );
+    case 'blast-hero':
+      return (
+        <div className={styles.illustrationCard} style={{ background: 'linear-gradient(135deg, #010a18 0%, #0044ff 100%)' }}>
+          <svg viewBox="0 0 200 120" className={styles.illustrationSvg}>
+            <defs>
+              <linearGradient id="heroGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="rgba(0, 123, 255, 0)" />
+                <stop offset="50%" stopColor="rgba(0, 123, 255, 0.4)" />
+                <stop offset="100%" stopColor="#007bff" />
+              </linearGradient>
+            </defs>
+            <path d="M 30 100 Q 80 90 160 30" fill="none" stroke="url(#heroGrad)" strokeWidth="6" strokeLinecap="round" filter="drop-shadow(0 0 8px #007bff)" />
+            <text x="150" y="35" fontSize="30" filter="drop-shadow(0 0 10px #007bff)">🦸‍♂️</text>
+          </svg>
+          <span className={styles.illustrationText} style={{ color: 'rgba(0, 123, 255, 0.7)' }}>SUPERHERO</span>
         </div>
       );
     case 'mines':

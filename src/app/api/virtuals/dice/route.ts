@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/lib/supabase-server';
+import { createSupabaseServer, getFastUser } from '@/lib/supabase-server';
 import { getAdminConfig, clearGlobalRig, deductBalance, addBalance, createGameRound, recordBet, completeGameRound } from '@/lib/dal';
 import crypto from 'crypto';
 
@@ -12,15 +12,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getFastUser();
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const deducted = await deductBalance(user.id, bet);
+    const [deducted, config] = await Promise.all([
+      deductBalance(user.id, bet),
+      getAdminConfig()
+    ]);
     if (!deducted) return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
-
-    const config = await getAdminConfig();
     const winChance = isRollOver ? 100 - target : target;
     const multiplier = 99 / winChance; // 1% house edge
 
@@ -51,15 +51,22 @@ export async function POST(request: Request) {
     const isWin = isRollOver ? finalRoll > target : finalRoll < target;
     const winAmount = isWin ? bet * multiplier : 0;
 
-    if (isWin && winAmount > 0) {
-      await addBalance(user.id, winAmount);
-    }
-
-    // Secure audit logging
     const serverSeed = crypto.randomBytes(32).toString('hex');
-    const round = await createGameRound('dice', serverSeed);
-    await recordBet(user.id, 'dice', bet, multiplier, winAmount, round.id);
-    await completeGameRound(round.id, user.id, JSON.stringify({ target, isRollOver, roll: finalRoll, winAmount }));
+    const dbPromises: Promise<any>[] = [];
+    
+    if (isWin && winAmount > 0) {
+      dbPromises.push(addBalance(user.id, winAmount));
+    }
+    
+    dbPromises.push(
+      createGameRound('dice', serverSeed).then(round => 
+        recordBet(user.id, 'dice', bet, multiplier, winAmount, round.id).then(() =>
+          completeGameRound(round.id, user.id, JSON.stringify({ target, isRollOver, roll: finalRoll, winAmount }))
+        )
+      )
+    );
+
+    await Promise.all(dbPromises);
 
     return NextResponse.json({
       status: 'success',

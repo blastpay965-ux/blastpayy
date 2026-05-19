@@ -33,6 +33,22 @@
   width: 100%;
   height: 100%;
   z-index: 1;
+  background-color: #0b141c;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: 0 0;
+  border-radius: 8px;
+}
+
+.canvasBgPlaying {
+  animation: scrollGrid 1s linear infinite;
+}
+
+@keyframes scrollGrid {
+  0% { background-position: 0 0; }
+  100% { background-position: -50px 50px; }
 }
 
 .graph {
@@ -59,13 +75,23 @@
 }
 
 .planeIcon {
-  transform: rotate(-15deg);
-  animation: slightShake 0.5s infinite alternate;
+  transform-origin: center;
+  animation: planeFloat 1.2s ease-in-out infinite alternate;
 }
 
-@keyframes slightShake {
-  from { transform: rotate(-12deg) translateY(-2px); }
-  to { transform: rotate(-18deg) translateY(2px); }
+@keyframes planeFloat {
+  from { transform: translateY(-3px) rotate(-8deg); }
+  to   { transform: translateY(3px)  rotate(-4deg); }
+}
+
+.flamePulse {
+  animation: flamePulseAnim 0.25s ease-in-out infinite alternate;
+  transform-origin: right center;
+}
+
+@keyframes flamePulseAnim {
+  from { transform: scaleX(0.75) scaleY(0.8); opacity: 0.8; }
+  to   { transform: scaleX(1.2)  scaleY(1.1); opacity: 1.0; }
 }
 
 .overlayText {
@@ -98,10 +124,11 @@
 }
 
 .bigMultiplier {
-  font-size: 6rem;
+  font-size: 7rem;
   font-weight: 900;
   color: #fff;
-  text-shadow: 0 0 40px rgba(220, 53, 69, 0.4);
+  text-shadow: 0 0 20px rgba(220, 53, 69, 0.5);
+  font-variant-numeric: tabular-nums;
 }
 
 .flewAway h2 {
@@ -142,20 +169,31 @@
   color: #dc3545;
 }
 
+.flyAwayAnim {
+  animation: flyOffScreen 0.5s cubic-bezier(0.5, 0, 1, 0.5) forwards;
+}
+
+@keyframes flyOffScreen {
+  0% { opacity: 1; }
+  100% { transform: translate(300%, -300%) scale(0.5); opacity: 0; }
+}
+
 /* Betting controls panel layout */
 
 .controlPanel {
   flex: 1;
-  background-color: #1a1a1a;
+  background-color: #213743;
   border-radius: var(--border-radius-md);
+  border: 1px solid #2F4553;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.02);
 }
 
 .panelTabs {
   display: flex;
-  background-color: #222;
+  background-color: #1A2C38;
   align-items: center;
 }
 
@@ -163,9 +201,9 @@
   padding: 0.5rem 2rem;
   font-size: 0.85rem;
   font-weight: 600;
-  border-bottom: 2px solid #dc3545;
-  color: #fff;
-  background: #1a1a1a;
+  border-bottom: 2px solid var(--accent-primary);
+  color: var(--accent-primary);
+  background: #213743;
 }
 
 .autoCashoutToggle {
@@ -175,7 +213,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: #888;
+  color: #B1BAD3;
 }
 
 .panelBody {
@@ -189,25 +227,30 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  background-color: #1A2C38;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #2F4553;
 }
 
 .stepper {
   display: flex;
-  background-color: #0b0b0b;
-  border-radius: 20px;
+  background-color: #0F1923;
+  border-radius: 6px;
   overflow: hidden;
-  border: 1px solid #333;
+  border: 1px solid #2F4553;
 }
 
 .stepper button {
   width: 40px;
-  background-color: #222;
-  color: #888;
+  background-color: #2F4553;
+  color: #B1BAD3;
   font-weight: 800;
+  transition: all 0.1s;
 }
 
 .stepper button:hover {
-  background-color: #333;
+  background-color: #425A6B;
   color: #fff;
 }
 
@@ -230,31 +273,33 @@
 }
 
 .quickBets button {
-  background-color: #222;
-  border-radius: 12px;
+  background-color: #2F4553;
+  border-radius: 4px;
   padding: 0.25rem 0;
   font-size: 0.8rem;
-  color: #aaa;
+  font-weight: bold;
+  color: #B1BAD3;
+  transition: all 0.1s;
 }
 
 .quickBets button:hover {
-  background-color: #333;
+  background-color: #425A6B;
   color: #fff;
 }
 
 .autoTargetGroup {
   display: flex;
   align-items: center;
-  background-color: #0b0b0b;
-  border: 1px solid #333;
-  border-radius: 12px;
+  background-color: #0F1923;
+  border: 1px solid #2F4553;
+  border-radius: 6px;
   padding: 0.25rem 0.5rem;
   margin-top: 0.25rem;
 }
 
 .autoTargetPrefix {
   font-size: 0.75rem;
-  color: #888;
+  color: #B1BAD3;
   white-space: nowrap;
 }
 
@@ -271,7 +316,7 @@
 }
 
 .autoTargetSuffix {
-  color: #888;
+  color: #B1BAD3;
   font-size: 0.8rem;
 }
 
@@ -282,7 +327,7 @@
 .actionBtn {
   width: 100%;
   height: 100%;
-  border-radius: 16px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -301,15 +346,15 @@
 }
 
 .btnBet {
-  background-color: #28a745;
-  color: #fff;
-  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3);
+  background-color: var(--accent-primary);
+  color: #0B141C;
+  box-shadow: 0 4px 15px rgba(0, 230, 118, 0.2);
 }
 
 .btnCashout {
-  background-color: #ff9900;
-  color: #fff;
-  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3);
+  background-color: #ffaa00;
+  color: #0B141C;
+  box-shadow: 0 4px 15px rgba(255, 170, 0, 0.2);
 }
 
 .btnCancel {

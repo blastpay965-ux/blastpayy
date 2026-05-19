@@ -429,9 +429,6 @@ export default function AdminDashboard() {
       minesHouseEdge,
       plinkoHouseEdge,
       isRigged,
-      plinkoRiggedBucket: plinkoRiggedBucket || null,
-      nextCrashMultiplier: nextCrashMultiplier ? parseFloat(nextCrashMultiplier) : activeNextCrash,
-      isMinesRiggedNextClick: isMinesRiggedNextClick === 'normal' ? null : isMinesRiggedNextClick,
       sandboxPaymentMode,
       bannedUsers,
       frozenUsers,
@@ -439,7 +436,9 @@ export default function AdminDashboard() {
       totalWithdrawals,
       activeUsersCount: activeUsers,
       simulatedGrowth: growthPercent,
-      globalRigOutcome,
+      // Rig-specific fields are ONLY sent when explicitly passed via overrideParams
+      // so the 2s polling cycle never accidentally re-writes a value the game engine
+      // just cleared (the root cause of the rig-not-working bug)
       ...overrideParams
     };
 
@@ -1099,7 +1098,11 @@ export default function AdminDashboard() {
                 <button 
                   type="button" 
                   className={styles.btnSave} 
-                  onClick={() => handleSaveConfigs()}
+                  onClick={() => {
+                    const val = parseFloat(nextCrashMultiplier);
+                    if (isNaN(val) || val < 1) return alert('Enter a valid multiplier (≥ 1.00)');
+                    triggerRigNextCrash(val);
+                  }}
                   style={{ marginTop: 0, padding: '0 1rem' }}
                 >
                   Set
@@ -1181,7 +1184,11 @@ export default function AdminDashboard() {
                 <button 
                   type="button" 
                   className={styles.btnSave} 
-                  onClick={() => handleSaveConfigs()}
+                  onClick={() => {
+                    const bucket = parseInt(plinkoRiggedBucket);
+                    if (isNaN(bucket) || bucket < 0 || bucket > 12) return alert('Enter a valid bucket index (0-12)');
+                    handleSaveConfigs({ plinkoRiggedBucket: plinkoRiggedBucket });
+                  }}
                   style={{ marginTop: 0, padding: '0 1rem' }}
                 >
                   Set

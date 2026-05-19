@@ -3,15 +3,17 @@ import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import Rocket from './Rocket';
+import Hero3D from './Hero3D';
 import CurvePath from './CurvePath';
 import Explosion from './Explosion';
 
 interface SceneProps {
   status: 'betting' | 'playing' | 'crashed';
   multiplier: number;
+  modelType?: 'rocket' | 'hero';
 }
 
-function GameEnvironment({ status, multiplier }: SceneProps) {
+function GameEnvironment({ status, multiplier, modelType = 'rocket' }: SceneProps) {
   const rocketRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
 
@@ -110,8 +112,12 @@ function GameEnvironment({ status, multiplier }: SceneProps) {
       {/* Path */}
       {status !== 'betting' && <CurvePath points={pathPoints} />}
 
-      {/* Rocket */}
-      <Rocket ref={rocketRef} visible={status !== 'crashed'} />
+      {/* Main Model */}
+      {modelType === 'hero' ? (
+        <Hero3D ref={rocketRef} visible={status !== 'crashed'} />
+      ) : (
+        <Rocket ref={rocketRef} visible={status !== 'crashed'} />
+      )}
 
       {/* Explosion */}
       <Explosion position={rocketPos} isCrashed={status === 'crashed'} />
@@ -119,13 +125,13 @@ function GameEnvironment({ status, multiplier }: SceneProps) {
   );
 }
 
-export default function Scene({ status, multiplier }: SceneProps) {
+export default function Scene({ status, multiplier, modelType = 'rocket' }: SceneProps) {
   return (
     <Canvas
       style={{ background: 'transparent' }}
       camera={{ position: [0, 0, 15], fov: 45 }}
     >
-      <GameEnvironment status={status} multiplier={multiplier} />
+      <GameEnvironment status={status} multiplier={multiplier} modelType={modelType} />
       
       {/* Post Processing for Glow/Bloom */}
       <EffectComposer>

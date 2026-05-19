@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/lib/supabase-server';
+import { createSupabaseServer, getFastUser } from '@/lib/supabase-server';
 import { deductBalance, addBalance, createGameRound, recordBet, completeGameRound, getAdminConfig, clearGlobalRig } from '@/lib/dal';
 import crypto from 'crypto';
 
@@ -13,15 +13,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getFastUser();
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const deducted = await deductBalance(user.id, bet);
+    const [deducted, config] = await Promise.all([
+      deductBalance(user.id, bet),
+      getAdminConfig()
+    ]);
     if (!deducted) return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
-
-    const config = await getAdminConfig();
     
     // Rigging Override check
     let rig = config.globalRigOutcome;
@@ -45,15 +45,22 @@ export async function POST(request: Request) {
     const isWin = finalMult >= target;
     const winAmount = isWin ? bet * target : 0;
 
-    if (isWin && winAmount > 0) {
-      await addBalance(user.id, winAmount);
-    }
-
-    // Secure audit logging
     const serverSeed = crypto.randomBytes(32).toString('hex');
-    const round = await createGameRound('limbo', serverSeed);
-    await recordBet(user.id, 'limbo', bet, target, winAmount, round.id);
-    await completeGameRound(round.id, user.id, JSON.stringify({ target, result: finalMult, winAmount }));
+    const dbPromises: Promise<any>[] = [];
+    
+    if (isWin && winAmount > 0) {
+      dbPromises.push(addBalance(user.id, winAmount));
+    }
+    
+    dbPromises.push(
+      createGameRound('limbo', serverSeed).then(round => 
+        recordBet(user.id, 'limbo', bet, target, winAmount, round.id).then(() =>
+          completeGameRound(round.id, user.id, JSON.stringify({ target, result: finalMult, winAmount }))
+        )
+      )
+    );
+
+    await Promise.all(dbPromises);
 
     return NextResponse.json({
       status: 'success',

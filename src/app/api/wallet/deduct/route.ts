@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/lib/supabase-server';
+import { createSupabaseServer, getFastUser } from '@/lib/supabase-server';
 import { getProfile, deductBalance, getTransactions } from '@/lib/dal';
 import { getAdminConfig } from '@/lib/dal';
 import { isRateLimited, rateLimitedResponse, getClientIp, checkBodySize, sanitizeInput } from '@/lib/security';
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
   try {
     const supabase = await createSupabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getFastUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const [profile, config] = await Promise.all([getProfile(user.id), getAdminConfig()]);

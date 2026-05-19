@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/lib/supabase-server';
+import { createSupabaseServer, getFastUser } from '@/lib/supabase-server';
 import { deductBalance, addBalance, createGameRound, recordBet, completeGameRound, getAdminConfig } from '@/lib/dal';
 
 function calculateMultiplier(mines: number, hits: number, houseEdge: number) {
@@ -16,8 +16,7 @@ export async function POST(request: Request) {
     const raw = await request.json();
     const { action, roundId, betAmount, mineCount, index } = raw;
 
-    const supabase = await createSupabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getFastUser();
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

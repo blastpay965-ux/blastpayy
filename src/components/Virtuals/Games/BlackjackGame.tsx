@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import GameLayout from '../Shared/GameLayout';
 import { useWallet } from '@/context/WalletContext';
+import { useToast } from '@/context/ToastContext';
 import styles from './BlackjackGame.module.css';
 import controlStyles from '../CrashGame.module.css';
 
@@ -17,7 +18,8 @@ interface Card {
 }
 
 export default function BlackjackGame() {
-  const { balance, deductBalance, addBalance } = useWallet();
+  const { balance, syncWallet } = useWallet();
+  const { showError } = useToast();
   const [betAmount, setBetAmount] = useState('10.00');
   
   const [isPlaying, setIsPlaying] = useState(false);
@@ -56,7 +58,7 @@ export default function BlackjackGame() {
 
   const startGame = async () => {
     const bet = parseFloat(betAmount);
-    if (isNaN(bet) || bet <= 0 || bet > balance) return alert('Invalid bet or insufficient funds');
+    if (isNaN(bet) || bet <= 0 || bet > balance) return showError('Invalid bet or insufficient funds');
 
     try {
       const res = await fetch('/api/virtuals/blackjack', {
@@ -76,10 +78,12 @@ export default function BlackjackGame() {
         setWinStatus('win');
         setWinAmount(data.winAmount);
         setIsPlaying(false);
+        await syncWallet();
       } else {
         setIsPlaying(true);
+        await syncWallet();
       }
-    } catch (e: any) { alert(e.message || 'Failed to deal'); }
+    } catch (e: any) { showError(e.message || 'Failed to deal'); }
   };
 
   const handleHit = async () => {
@@ -99,8 +103,9 @@ export default function BlackjackGame() {
         setWinStatus('lose');
         setWinAmount(0);
         setIsPlaying(false);
+        await syncWallet();
       }
-    } catch (e: any) { alert(e.message || 'Failed to hit'); }
+    } catch (e: any) { showError(e.message || 'Failed to hit'); }
   };
 
   const handleStand = async () => {
@@ -119,11 +124,23 @@ export default function BlackjackGame() {
       setWinAmount(data.winAmount || 0);
       setWinStatus(data.status as 'win' | 'lose' | 'push');
       setIsPlaying(false);
-    } catch (e: any) { alert(e.message || 'Failed to stand'); }
+      await syncWallet();
+    } catch (e: any) { showError(e.message || 'Failed to stand'); }
   };
 
   const pScore = calculateScore(playerCards);
   const dScore = calculateScore(dealerCards);
+
+  const handleBetChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setBetAmount(val);
+    }
+  };
+
+  const safeParse = (val: string) => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  };
 
   const controls = (
     <div className={controlStyles.controlPanel} style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
@@ -134,13 +151,13 @@ export default function BlackjackGame() {
          <div className={controlStyles.betAdjuster}>
            <label style={{color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem'}}>Bet Amount</label>
            <div className={controlStyles.stepper}>
-             <button onClick={() => setBetAmount(p => Math.max(1, parseFloat(p)-1).toFixed(2))} disabled={isPlaying}>-</button>
-             <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)} disabled={isPlaying} />
-             <button onClick={() => setBetAmount(p => (parseFloat(p)+1).toFixed(2))} disabled={isPlaying}>+</button>
+             <button onClick={() => setBetAmount(p => Math.max(1, safeParse(p)-1).toFixed(2))} disabled={isPlaying}>-</button>
+             <input type="text" inputMode="decimal" value={betAmount} onChange={e => handleBetChange(e.target.value)} disabled={isPlaying} />
+             <button onClick={() => setBetAmount(p => (safeParse(p)+1).toFixed(2))} disabled={isPlaying}>+</button>
            </div>
            <div className={controlStyles.quickBets}>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)/2).toFixed(2))} disabled={isPlaying}>½</button>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)*2).toFixed(2))} disabled={isPlaying}>2×</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)/2).toFixed(2))} disabled={isPlaying}>½</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)*2).toFixed(2))} disabled={isPlaying}>2×</button>
              <button onClick={() => setBetAmount(balance.toFixed(2))} disabled={isPlaying}>Max</button>
            </div>
          </div>

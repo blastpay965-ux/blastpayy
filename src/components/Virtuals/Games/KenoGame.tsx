@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import GameLayout from '../Shared/GameLayout';
 import { useWallet } from '@/context/WalletContext';
+import { useToast } from '@/context/ToastContext';
 import styles from './KenoGame.module.css';
 import controlStyles from '../CrashGame.module.css';
 
@@ -17,6 +18,7 @@ const PAYTABLE = [
 
 export default function KenoGame() {
   const { balance, deductBalance, addBalance } = useWallet();
+  const { showError } = useToast();
   const [betAmount, setBetAmount] = useState('10.00');
   
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
@@ -38,9 +40,9 @@ export default function KenoGame() {
   };
 
   const handleBet = async () => {
-    if (selectedNumbers.length !== 5) return alert('Please select exactly 5 numbers');
+    if (selectedNumbers.length !== 5) return showError('Please select exactly 5 numbers');
     const bet = parseFloat(betAmount);
-    if (isNaN(bet) || bet <= 0 || bet > balance) return alert('Invalid bet or insufficient funds');
+    if (isNaN(bet) || bet <= 0 || bet > balance) return showError('Invalid bet or insufficient funds');
 
     setIsDrawing(true);
     setGameDone(false);
@@ -74,7 +76,7 @@ export default function KenoGame() {
       }, 400);
     } catch (e: any) {
       setIsDrawing(false);
-      alert(e.message || 'Failed to play Keno securely');
+      showError(e.message || 'Failed to play Keno securely');
     }
   };
 
@@ -90,6 +92,17 @@ export default function KenoGame() {
 
   const currentMult = PAYTABLE.find(p => p.hits === hitsCount)?.mult || 0;
 
+  const handleBetChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setBetAmount(val);
+    }
+  };
+
+  const safeParse = (val: string) => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   const controls = (
     <div className={controlStyles.controlPanel} style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
        <div className={controlStyles.panelTabs}>
@@ -104,13 +117,13 @@ export default function KenoGame() {
          <div className={controlStyles.betAdjuster}>
            <label style={{color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem'}}>Bet Amount</label>
            <div className={controlStyles.stepper}>
-             <button onClick={() => setBetAmount(p => Math.max(1, parseFloat(p)-1).toFixed(2))} disabled={isDrawing}>-</button>
-             <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)} disabled={isDrawing} />
-             <button onClick={() => setBetAmount(p => (parseFloat(p)+1).toFixed(2))} disabled={isDrawing}>+</button>
+             <button onClick={() => setBetAmount(p => Math.max(1, safeParse(p)-1).toFixed(2))} disabled={isDrawing}>-</button>
+             <input type="text" inputMode="decimal" value={betAmount} onChange={e => handleBetChange(e.target.value)} disabled={isDrawing} />
+             <button onClick={() => setBetAmount(p => (safeParse(p)+1).toFixed(2))} disabled={isDrawing}>+</button>
            </div>
            <div className={controlStyles.quickBets}>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)/2).toFixed(2))} disabled={isDrawing}>½</button>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)*2).toFixed(2))} disabled={isDrawing}>2×</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)/2).toFixed(2))} disabled={isDrawing}>½</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)*2).toFixed(2))} disabled={isDrawing}>2×</button>
              <button onClick={() => setBetAmount(balance.toFixed(2))} disabled={isDrawing}>Max</button>
            </div>
          </div>

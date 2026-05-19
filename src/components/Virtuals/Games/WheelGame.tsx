@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import GameLayout from '../Shared/GameLayout';
 import { useWallet } from '@/context/WalletContext';
+import { useToast } from '@/context/ToastContext';
 import styles from './WheelGame.module.css';
 import controlStyles from '../CrashGame.module.css';
 
@@ -19,7 +20,8 @@ const SEGMENTS = [
 ];
 
 export default function WheelGame() {
-  const { balance, deductBalance, addBalance } = useWallet();
+  const { balance, syncWallet } = useWallet();
+  const { showError } = useToast();
   const [betAmount, setBetAmount] = useState('10.00');
   
   const [isSpinning, setIsSpinning] = useState(false);
@@ -29,7 +31,7 @@ export default function WheelGame() {
 
   const handleSpin = async () => {
     const bet = parseFloat(betAmount);
-    if (isNaN(bet) || bet <= 0 || bet > balance) return alert('Invalid bet or insufficient funds');
+    if (isNaN(bet) || bet <= 0 || bet > balance) return showError('Invalid bet or insufficient funds');
 
     setIsSpinning(true);
     setWinStatus(null);
@@ -51,15 +53,27 @@ export default function WheelGame() {
       const forcedTotalRotation = rotation + extraSpins + targetAngle - (segmentAngle / 2);
       setRotation(forcedTotalRotation);
 
-      setTimeout(() => {
+      setTimeout(async () => {
         setActiveMult(mult);
         setWinStatus(mult > 0);
         setIsSpinning(false);
+        await syncWallet();
       }, 3000);
     } catch (e: any) {
       setIsSpinning(false);
-      alert(e.message || 'Failed to spin securely');
+      showError(e.message || 'Failed to spin securely');
     }
+  };
+
+  const handleBetChange = (val: string) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setBetAmount(val);
+    }
+  };
+
+  const safeParse = (val: string) => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   const controls = (
@@ -71,13 +85,13 @@ export default function WheelGame() {
          <div className={controlStyles.betAdjuster}>
            <label style={{color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem'}}>Bet Amount</label>
            <div className={controlStyles.stepper}>
-             <button onClick={() => setBetAmount(p => Math.max(1, parseFloat(p)-1).toFixed(2))} disabled={isSpinning}>-</button>
-             <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)} disabled={isSpinning} />
-             <button onClick={() => setBetAmount(p => (parseFloat(p)+1).toFixed(2))} disabled={isSpinning}>+</button>
+             <button onClick={() => setBetAmount(p => Math.max(1, safeParse(p)-1).toFixed(2))} disabled={isSpinning}>-</button>
+             <input type="text" inputMode="decimal" value={betAmount} onChange={e => handleBetChange(e.target.value)} disabled={isSpinning} />
+             <button onClick={() => setBetAmount(p => (safeParse(p)+1).toFixed(2))} disabled={isSpinning}>+</button>
            </div>
            <div className={controlStyles.quickBets}>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)/2).toFixed(2))} disabled={isSpinning}>½</button>
-             <button onClick={() => setBetAmount(p => (parseFloat(p)*2).toFixed(2))} disabled={isSpinning}>2×</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)/2).toFixed(2))} disabled={isSpinning}>½</button>
+             <button onClick={() => setBetAmount(p => (safeParse(p)*2).toFixed(2))} disabled={isSpinning}>2×</button>
              <button onClick={() => setBetAmount(balance.toFixed(2))} disabled={isSpinning}>Max</button>
            </div>
          </div>

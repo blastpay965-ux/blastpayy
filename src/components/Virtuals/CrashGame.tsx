@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useWallet } from '@/context/WalletContext';
+import { useToast } from '@/context/ToastContext';
 import styles from './CrashGame.module.css';
-import { Plane, Flame, Volume2, VolumeX } from 'lucide-react';
+import { Flame, Volume2, VolumeX } from 'lucide-react';
 import Scene from './Three/Scene';
 import GameLayout from './Shared/GameLayout';
 import { audioSystem } from '@/lib/audio';
@@ -25,7 +26,8 @@ interface GameState {
 }
 
 export default function CrashGame() {
-  const { balance, deduct, deposit } = useWallet();
+  const { balance, deduct, deposit, deductOptimistic } = useWallet();
+  const { showError } = useToast();
   const [gameState, setGameState] = useState<GameState>({ 
     status: 'betting', 
     multiplier: 1.0, 
@@ -33,6 +35,7 @@ export default function CrashGame() {
     history: [],
     players: []
   });
+  const [visualMultiplier, setVisualMultiplier] = useState(1.0);
   const [isMuted, setIsMuted] = useState(false);
   
   // Panel 1 State
@@ -84,6 +87,8 @@ export default function CrashGame() {
     if (panel === 1 && activeBet1Ref.current && !hasCashedOut1Ref.current && betId1) {
       setHasCashedOut1(true);
       const wonAmount = activeBet1Ref.current * mult;
+      setWin1(wonAmount);
+      deposit(wonAmount); // Optimistic deposit
       
       try {
         await fetch('/api/virtuals/crash/cashout', {
@@ -91,16 +96,20 @@ export default function CrashGame() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ betId: betId1, multiplier: mult, winAmount: wonAmount })
         });
-        setWin1(wonAmount);
         audioSystem.playCashout();
       } catch (err) {
         console.error('Failed to cashout securely');
+        setHasCashedOut1(false);
+        setWin1(null);
+        deduct(wonAmount); // Revert optimistic deposit
       }
     }
 
     if (panel === 2 && activeBet2Ref.current && !hasCashedOut2Ref.current && betId2) {
       setHasCashedOut2(true);
       const wonAmount = activeBet2Ref.current * mult;
+      setWin2(wonAmount);
+      deposit(wonAmount); // Optimistic deposit
       
       try {
         await fetch('/api/virtuals/crash/cashout', {
@@ -108,10 +117,12 @@ export default function CrashGame() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ betId: betId2, multiplier: mult, winAmount: wonAmount })
         });
-        setWin2(wonAmount);
         audioSystem.playCashout();
       } catch (err) {
         console.error('Failed to cashout securely');
+        setHasCashedOut2(false);
+        setWin2(null);
+        deduct(wonAmount); // Revert optimistic deposit
       }
     }
   };
@@ -134,8 +145,10 @@ export default function CrashGame() {
             setHasCashedOut2(false);
             setWin2(null);
             setBetId2(null);
+            setVisualMultiplier(1.0); // Reset visual immediately
           } else if (prev.status === 'playing' && data.status === 'crashed') {
             audioSystem.playBomb();
+            setVisualMultiplier(data.multiplier); // Snap to crash value
           } else if (data.status === 'playing') {
             audioSystem.playAscend(data.multiplier);
           }
@@ -162,10 +175,46 @@ export default function CrashGame() {
       } catch (error) {
         console.error("Failed to fetch game state");
       }
-    }, 500); // 500ms is smooth enough for display; 100ms was hammering the server with 10 calls/sec
+    }, 500); // Poll server every 500ms
 
     return () => clearInterval(interval);
   }, []);
+
+  // Smooth visual interpolation
+  useEffect(() => {
+    let animationFrameId: number;
+    let lastTime = performance.now();
+
+    const interpolate = (time: number) => {
+      const delta = (time - lastTime) / 1000; // seconds
+      lastTime = time;
+
+      if (gameState.status === 'playing') {
+        setVisualMultiplier(prev => {
+          const target = gameState.multiplier;
+          if (prev >= target) return prev;
+          
+          // Instead of exponential decay (which slows down and stutters),
+          // we use a constant speed approach to catch up to the target smoothly.
+          const diff = target - prev;
+          if (diff <= 0) return prev;
+          
+          // Move towards target at a speed that bridges the gap in ~300ms
+          const speed = diff / 0.3; 
+          return Math.min(prev + (speed * delta), target);
+        });
+      } else if (gameState.status === 'crashed') {
+         setVisualMultiplier(gameState.multiplier);
+      } else {
+         setVisualMultiplier(1.0);
+      }
+
+      animationFrameId = requestAnimationFrame(interpolate);
+    };
+
+    animationFrameId = requestAnimationFrame(interpolate);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [gameState.status, gameState.multiplier]);
 
   const handleBet = async (panel: 1 | 2) => {
     if (gameStateRef.current.status !== 'betting') return;
@@ -173,10 +222,23 @@ export default function CrashGame() {
     const amountStr = panel === 1 ? bet1 : bet2;
     const amount = parseFloat(amountStr);
     
+    if (isNaN(amount) || amount <= 0) {
+      return showError('Please enter a valid bet amount.');
+    }
+    
+    if (amount > balance) {
+      return showError('Insufficient balance to place bet.');
+    }
+
     if (amount > 0 && amount <= balance) {
       const roundId = (gameStateRef.current as any).roundId;
       if (!roundId) return;
 
+      // Optimistic UI update
+      if (panel === 1) setActiveBet1(amount);
+      if (panel === 2) setActiveBet2(amount);
+      deductOptimistic(amount);
+      
       try {
         const res = await fetch('/api/virtuals/crash/bet', {
           method: 'POST',
@@ -188,23 +250,38 @@ export default function CrashGame() {
         if (!res.ok) throw new Error(data.error);
 
         audioSystem.init();
-        if (panel === 1) { setActiveBet1(amount); setBetId1(data.betId); }
-        if (panel === 2) { setActiveBet2(amount); setBetId2(data.betId); }
+        if (panel === 1) setBetId1(data.betId);
+        if (panel === 2) setBetId2(data.betId);
       } catch (err: any) {
         console.error('Failed to bet securely', err);
+        showError(err.message || 'Failed to place bet.');
+        // Revert optimistic update
+        if (panel === 1) setActiveBet1(null);
+        if (panel === 2) setActiveBet2(null);
       }
     }
   };
 
 
+  const handleBetChange = (val: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      setter(val);
+    }
+  };
+
+  const safeParse = (val: string) => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   const setHalf = (panel: 1|2) => {
-    if(panel === 1) setBet1(p => Math.max(1, parseFloat(p)/2).toFixed(2));
-    if(panel === 2) setBet2(p => Math.max(1, parseFloat(p)/2).toFixed(2));
+    if(panel === 1) setBet1(p => Math.max(1, safeParse(p)/2).toFixed(2));
+    if(panel === 2) setBet2(p => Math.max(1, safeParse(p)/2).toFixed(2));
   };
 
   const setDouble = (panel: 1|2) => {
-    if(panel === 1) setBet1(p => (parseFloat(p)*2).toFixed(2));
-    if(panel === 2) setBet2(p => (parseFloat(p)*2).toFixed(2));
+    if(panel === 1) setBet1(p => (safeParse(p)*2).toFixed(2));
+    if(panel === 2) setBet2(p => (safeParse(p)*2).toFixed(2));
   };
 
   const setMax = (panel: 1|2) => {
@@ -216,9 +293,14 @@ export default function CrashGame() {
   const isPlaying = gameState.status === 'playing';
   const isCrashed = gameState.status === 'crashed';
 
-  const chartScale = Math.min(1, Math.max(0.1, 1 / gameState.multiplier));
+  // Professional Aviator Curve Logic using interpolated multiplier
+  // The plane flies up and right, but caps out at 75% width/height so it doesn't fly off screen.
+  // The curve stretches to meet it smoothly.
+  const displayMult = gameState.status === 'playing' ? visualMultiplier : gameState.multiplier;
+  const progressX = Math.min(75, (displayMult - 1) * 20);
+  const progressY = Math.min(80, Math.log10(displayMult) * 60);
 
-  const formattedPlayers = gameState.players.map(p => ({
+  const formattedPlayers = (gameState.players || []).map(p => ({
     id: p.id,
     name: p.name,
     bet: p.bet,
@@ -280,9 +362,15 @@ export default function CrashGame() {
          <div className={styles.panelBody}>
            <div className={styles.betAdjuster}>
              <div className={styles.stepper}>
-               <button onClick={() => setBet1(p => Math.max(1, parseFloat(p)-1).toFixed(2))}>-</button>
-               <input type="number" value={bet1} onChange={e => setBet1(e.target.value)} disabled={activeBet1 !== null} />
-               <button onClick={() => setBet1(p => (parseFloat(p)+1).toFixed(2))}>+</button>
+               <button onClick={() => setBet1(p => Math.max(1, safeParse(p)-1).toFixed(2))}>-</button>
+               <input 
+                 type="text" 
+                 inputMode="decimal"
+                 value={bet1} 
+                 onChange={e => handleBetChange(e.target.value, setBet1)} 
+                 disabled={activeBet1 !== null} 
+               />
+               <button onClick={() => setBet1(p => (safeParse(p)+1).toFixed(2))}>+</button>
              </div>
              <div className={styles.quickBets}>
                <button onClick={() => setHalf(1)}>½</button>
@@ -293,9 +381,10 @@ export default function CrashGame() {
                <div className={styles.autoTargetGroup}>
                  <span className={styles.autoTargetPrefix}>Cash out @</span>
                  <input 
-                   type="number" 
+                   type="text" 
+                   inputMode="decimal"
                    value={autoCashout1} 
-                   onChange={e => setAutoCashout1(e.target.value)} 
+                   onChange={e => handleBetChange(e.target.value, setAutoCashout1)} 
                    placeholder="2.00"
                    disabled={activeBet1 !== null}
                  />
@@ -339,9 +428,15 @@ export default function CrashGame() {
          <div className={styles.panelBody}>
            <div className={styles.betAdjuster}>
              <div className={styles.stepper}>
-               <button onClick={() => setBet2(p => Math.max(1, parseFloat(p)-1).toFixed(2))}>-</button>
-               <input type="number" value={bet2} onChange={e => setBet2(e.target.value)} disabled={activeBet2 !== null} />
-               <button onClick={() => setBet2(p => (parseFloat(p)+1).toFixed(2))}>+</button>
+               <button onClick={() => setBet2(p => Math.max(1, safeParse(p)-1).toFixed(2))}>-</button>
+               <input 
+                 type="text" 
+                 inputMode="decimal"
+                 value={bet2} 
+                 onChange={e => handleBetChange(e.target.value, setBet2)} 
+                 disabled={activeBet2 !== null} 
+               />
+               <button onClick={() => setBet2(p => (safeParse(p)+1).toFixed(2))}>+</button>
              </div>
              <div className={styles.quickBets}>
                <button onClick={() => setHalf(2)}>½</button>
@@ -352,9 +447,10 @@ export default function CrashGame() {
                <div className={styles.autoTargetGroup}>
                  <span className={styles.autoTargetPrefix}>Cash out @</span>
                  <input 
-                   type="number" 
+                   type="text" 
+                   inputMode="decimal"
                    value={autoCashout2} 
-                   onChange={e => setAutoCashout2(e.target.value)} 
+                   onChange={e => handleBetChange(e.target.value, setAutoCashout2)} 
                    placeholder="2.00"
                    disabled={activeBet2 !== null}
                  />
@@ -401,8 +497,112 @@ export default function CrashGame() {
         "If the jet crashes before you cash out, you lose your bet."
       ]}
     >
-      <div className={styles.canvasBg}>
-        <Scene status={gameState.status} multiplier={gameState.multiplier} />
+      <div className={`${styles.canvasBg} ${isPlaying ? styles.canvasBgPlaying : ''}`}>
+        {/* Professional 2D Aviator SVG */}
+        {!isBetting && (
+          <div style={{ position: 'absolute', inset: 0 }}>
+            {/* Curve + fill */}
+            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', bottom: 0 }}>
+              <defs>
+                <linearGradient id="redGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#dc3545" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#dc3545" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path 
+                d={`M 0 100 Q ${progressX * 0.4} ${100 - progressY * 0.1} ${progressX} ${100 - progressY} L ${progressX} 100 Z`}
+                fill="url(#redGradient)"
+              />
+              <path 
+                d={`M 0 100 Q ${progressX * 0.4} ${100 - progressY * 0.1} ${progressX} ${100 - progressY}`}
+                stroke="#dc3545" 
+                strokeWidth="0.5" 
+                fill="none" 
+                style={{ filter: 'drop-shadow(0 0 2px rgba(220,53,69,0.9))' }}
+              />
+            </svg>
+
+            {/* Professional SVG Aircraft */}
+            {(isPlaying || isCrashed) && (
+              <div
+                className={isCrashed ? styles.flyAwayAnim : ''}
+                style={{
+                  position: 'absolute',
+                  left: `${progressX}%`,
+                  bottom: `${progressY}%`,
+                  transform: 'translate(-5%, 50%)',
+                  transition: 'none',
+                  zIndex: 20
+                }}
+              >
+                <svg
+                  width="120"
+                  height="60"
+                  viewBox="0 0 120 60"
+                  className={styles.planeIcon}
+                  style={{ overflow: 'visible' }}
+                >
+                  <defs>
+                    {/* Flame gradient for exhaust */}
+                    <radialGradient id="flameGrad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+                      <stop offset="30%" stopColor="#ffcc00" stopOpacity="0.9" />
+                      <stop offset="70%" stopColor="#ff4400" stopOpacity="0.7" />
+                      <stop offset="100%" stopColor="#ff0000" stopOpacity="0" />
+                    </radialGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="2" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+
+                  {/* === ENGINE EXHAUST FLAME (behind plane) === */}
+                  <ellipse cx="-8" cy="30" rx="18" ry="6" fill="url(#flameGrad)" className={styles.flamePulse} />
+                  <ellipse cx="-14" cy="30" rx="10" ry="3.5" fill="#ff6600" opacity="0.7" className={styles.flamePulse} />
+
+                  {/* === FUSELAGE (main body) === */}
+                  {/* Belly */}
+                  <path d="M 10 32 Q 40 38 90 31 Q 100 30 105 28 L 103 26 Q 95 28 88 29 Q 40 36 10 30 Z" fill="#c8ccd4" />
+                  {/* Top */}
+                  <path d="M 10 30 Q 40 22 85 25 Q 96 26 103 26 L 100 24 Q 90 23 82 22 Q 40 19 10 27 Z" fill="#ebedf0" />
+                  {/* Nose cone */}
+                  <path d="M 100 24 Q 112 27 116 28 Q 112 30 100 30 Z" fill="#dc3545" />
+                  {/* Red accent stripe */}
+                  <path d="M 20 27 Q 60 24 95 26 L 95 27 Q 60 25 20 28 Z" fill="#dc3545" opacity="0.7"/>
+
+                  {/* === COCKPIT WINDOW === */}
+                  <ellipse cx="90" cy="26" rx="6" ry="4" fill="#60c8ff" opacity="0.9" />
+                  <ellipse cx="90" cy="25.5" rx="4" ry="2.5" fill="#a8dfff" opacity="0.6" />
+
+                  {/* === MAIN WING (below fuselage) === */}
+                  <path d="M 55 30 L 45 52 L 75 38 L 80 30 Z" fill="#d1d5db" stroke="#b0b5bf" strokeWidth="0.5"/>
+                  <path d="M 55 30 L 50 52 L 45 52 L 55 29 Z" fill="#dc3545" opacity="0.5"/>
+                  {/* Wing highlight */}
+                  <path d="M 58 30 L 50 48 L 72 37 Z" fill="#e8eaed" opacity="0.5"/>
+
+                  {/* === TAIL VERTICAL FIN === */}
+                  <path d="M 18 28 L 12 14 L 22 22 Z" fill="#d1d5db" stroke="#b0b5bf" strokeWidth="0.5"/>
+                  <path d="M 18 28 L 13 16 L 16 16 L 20 26 Z" fill="#dc3545" opacity="0.5"/>
+
+                  {/* === HORIZONTAL STABILIZERS === */}
+                  <path d="M 20 29 L 10 36 L 22 32 Z" fill="#d1d5db" stroke="#b0b5bf" strokeWidth="0.5"/>
+                  <path d="M 20 28 L 10 22 L 22 26 Z" fill="#d1d5db" stroke="#b0b5bf" strokeWidth="0.5"/>
+
+                  {/* === ENGINE NACELLE (under wing) === */}
+                  <ellipse cx="60" cy="35" rx="9" ry="3.5" fill="#9ca3af"/>
+                  <ellipse cx="57" cy="35" rx="4" ry="3.5" fill="#6b7280"/>
+                  <ellipse cx="57" cy="35" rx="2.5" ry="2.5" fill="#1f2937"/>
+
+                  {/* Glow around entire plane */}
+                  <ellipse cx="60" cy="29" rx="55" ry="15" fill="#dc3545" opacity="0.04" />
+                </svg>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className={styles.overlayText}>
@@ -418,13 +618,13 @@ export default function CrashGame() {
 
          {isPlaying && (
             <div className={styles.bigMultiplier}>
-              {gameState.multiplier.toFixed(2)}x
+              {displayMult.toFixed(2)}x
             </div>
          )}
 
          {isCrashed && (
            <div className={styles.flewAway}>
-             <h2 className={styles.crashAnimation}>CRASHED! <Flame className={styles.flameIcon}/></h2>
+             <h2 className={styles.crashAnimation}>FLEW AWAY!</h2>
              <div className={styles.crashedMultiplier}>{gameState.multiplier.toFixed(2)}x</div>
            </div>
          )}

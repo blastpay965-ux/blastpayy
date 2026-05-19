@@ -9,16 +9,21 @@
  * Marked server-only: cannot be imported in client components.
  */
 import 'server-only';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
-// Admin client — bypasses RLS (server-side only, never expose to browser)
-export function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+// ── Singleton admin client ─────────────────────────────────────────────────────
+// Supabase client creation is expensive (TLS, auth setup). Reuse one instance.
+let _adminClient: SupabaseClient | null = null;
+export function getAdminClient(): SupabaseClient {
+  if (!_adminClient) {
+    _adminClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+  }
+  return _adminClient;
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -223,12 +228,13 @@ export async function createGameRound(gameType: string, serverSeed: string): Pro
 
 export async function completeGameRound(roundId: string, clientSeed: string, finalOutcome: string): Promise<void> {
   const supabase = getAdminClient();
-  await supabase.from('game_rounds').update({
+  // Fire-and-forget: audit log doesn't need to block the API response
+  supabase.from('game_rounds').update({
     client_seed: clientSeed,
     final_outcome: finalOutcome,
     status: 'completed',
     completed_at: new Date().toISOString()
-  }).eq('id', roundId);
+  }).eq('id', roundId).then(() => {/* intentional fire-and-forget */});
 }
 
 export async function recordBet(

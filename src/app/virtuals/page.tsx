@@ -21,21 +21,6 @@ export default function VirtualsPage() {
           </div>
           <CrashGame />
         </div>
-        
-        <div className={styles.infoSidebar}>
-          <div className={styles.infoCard}>
-            <h3>How to Play</h3>
-            <ol>
-              <li>Place a bet before the round starts.</li>
-              <li>Watch the multiplier increase.</li>
-              <li>Cash out before the crash to win!</li>
-            </ol>
-          </div>
-          <div className={styles.infoCard}>
-            <h3>Provably Fair</h3>
-            <p>Our games use cryptographic algorithms to ensure 100% fairness and transparency.</p>
-          </div>
-        </div>
       </section>
     </div>
   );

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/lib/supabase-server';
+import { getFastUser } from '@/lib/supabase-server';
 import { getAdminConfig, clearGlobalRig, deductBalance, addBalance, createGameRound, recordBet, completeGameRound } from '@/lib/dal';
 import crypto from 'crypto';
 
@@ -17,30 +17,35 @@ export async function POST(request: Request) {
     const bet = parseFloat(betAmount);
     if (isNaN(bet) || bet <= 0) return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
 
-    const supabase = await createSupabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getFastUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const deducted = await deductBalance(user.id, bet);
+    const [deducted, config] = await Promise.all([
+      deductBalance(user.id, bet),
+      getAdminConfig()
+    ]);
     if (!deducted) return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
 
-    const config = await getAdminConfig();
-    let rig = config.globalRigOutcome;
+    // Rig override — consumed once then cleared
+    const rig = config.globalRigOutcome;
     if (rig) await clearGlobalRig();
 
-    let reels = [
-      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].char,
-      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].char,
-      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].char
-    ];
+    let reels: string[];
 
     if (rig === 'win') {
+      // Force a jackpot — random matching symbol
       const winSymbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].char;
       reels = [winSymbol, winSymbol, winSymbol];
     } else if (rig === 'lose') {
+      // Force a guaranteed loss — three unique different symbols
       reels = ['🍒', '🍋', '🔔'];
     } else {
-      // Standard 20% win rate
+      // Standard spin — 20% win rate
+      reels = [
+        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].char,
+        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].char,
+        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].char,
+      ];
       if (Math.random() > 0.8) {
         const winSymbol = SYMBOLS[Math.floor(Math.random() * 3)].char;
         reels = [winSymbol, winSymbol, winSymbol];
@@ -57,14 +62,25 @@ export async function POST(request: Request) {
         payoutMult = symbolData.payout;
         winAmount = bet * payoutMult;
         isWin = true;
-        await addBalance(user.id, winAmount);
       }
     }
 
     const serverSeed = crypto.randomBytes(32).toString('hex');
-    const round = await createGameRound('slots', serverSeed);
-    await recordBet(user.id, 'slots', bet, payoutMult || 0, winAmount, round.id);
-    await completeGameRound(round.id, user.id, JSON.stringify({ reels, isWin, winAmount }));
+    const dbPromises: Promise<any>[] = [];
+
+    if (isWin && winAmount > 0) {
+      dbPromises.push(addBalance(user.id, winAmount));
+    }
+
+    dbPromises.push(
+      createGameRound('slots', serverSeed).then(round =>
+        recordBet(user.id, 'slots', bet, payoutMult || 0, winAmount, round.id).then(() =>
+          completeGameRound(round.id, user.id, JSON.stringify({ reels, isWin, winAmount }))
+        )
+      )
+    );
+
+    await Promise.all(dbPromises);
 
     return NextResponse.json({ status: 'success', reels, isWin, payoutMult, winAmount });
   } catch (err: any) {

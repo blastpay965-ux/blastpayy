@@ -9,8 +9,8 @@
 }
 
 .mainDisplay {
-  background-color: #1a1d24;
-  border: 1px solid #2a2e38;
+  background-color: #0F1923;
+  border: 1px solid #2F4553;
   border-radius: 20px;
   padding: 3rem 4rem;
   text-align: center;
@@ -42,7 +42,7 @@
 .sliderTrack {
   width: 100%;
   height: 12px;
-  background-color: #2a2e38;
+  background-color: #1A2C38;
   border-radius: 6px;
   position: relative;
 }
@@ -103,8 +103,9 @@
 .targetLabel {
   position: absolute;
   top: -30px;
-  background: #3b4150;
+  background: #213743;
   color: #fff;
+  border: 1px solid #2F4553;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-weight: bold;
@@ -123,7 +124,7 @@
   background-color: rgba(0,0,0,0.2);
   padding: 1rem;
   border-radius: 12px;
-  border: 1px solid #2a2e38;
+  border: 1px solid #1A2C38;
 }
 
 .statLabel {
@@ -142,7 +143,8 @@
 
 .toggleContainer {
   display: flex;
-  background-color: #2a2e38;
+  background-color: #0F1923;
+  border: 1px solid #2F4553;
   border-radius: 8px;
   padding: 0.25rem;
   margin-bottom: 2rem;
@@ -163,7 +165,8 @@
 }
 
 .toggleBtn.active {
-  background-color: #3b4150;
+  background-color: #213743;
   color: #fff;
+  border: 1px solid #2F4553;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }

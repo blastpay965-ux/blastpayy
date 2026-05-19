@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { ShieldAlert, Lock, LogOut } from 'lucide-react';
@@ -25,6 +25,7 @@ interface WalletContextType {
   addBalance: (amount: number) => void;     // legacy alias
   deductBalance: (amount: number) => void;  // legacy alias
   syncWallet: () => Promise<void>;
+  deductOptimistic: (amount: number) => void;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -38,7 +39,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const realtimeChannelRef = useRef<ReturnType<ReturnType<typeof getSupabaseBrowser>['channel']> | null>(null);
 
   // ── Sync wallet from server ───────────────────────────────────────
-  const syncWallet = async () => {
+  const syncWallet = useCallback(async () => {
     if (!user) {
       setBalance(0);
       setTransactions([]);
@@ -58,7 +59,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // ignore network errors
     }
-  };
+  }, [user]);
 
   // ── Supabase Realtime — live balance subscription ─────────────────
   useEffect(() => {
@@ -102,15 +103,26 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
     realtimeChannelRef.current = channel;
 
+    // Backup polling: sync wallet every 30 seconds to guarantee realtime updates
+    // under all network/realtime replication conditions!
+    const pollInterval = setInterval(() => {
+      syncWallet();
+    }, 30000);
+
     return () => {
       if (realtimeChannelRef.current) {
         supabase.removeChannel(realtimeChannelRef.current);
         realtimeChannelRef.current = null;
       }
+      clearInterval(pollInterval);
     };
-  }, [user?.id]);
+  }, [user?.id, syncWallet]);
 
   // ── Wallet operations ─────────────────────────────────────────────
+
+  const deductOptimistic = (amount: number) => {
+    setBalance(prev => Math.max(0, prev - amount));
+  };
 
   const deposit = async (amount: number) => {
     try {
@@ -160,7 +172,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <WalletContext.Provider
-      value={{ balance, transactions, isFrozen, isBanned, deposit, withdraw, deduct, addBalance, deductBalance, syncWallet }}
+      value={{ balance, transactions, isFrozen, isBanned, deposit, withdraw, deduct, addBalance, deductBalance, syncWallet, deductOptimistic }}
     >
       {/* GLOBAL BAN/FREEZE NOTIFICATION OVERLAY */}
       {(isBanned || isFrozen) && (
