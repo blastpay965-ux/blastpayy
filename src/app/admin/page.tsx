@@ -373,12 +373,13 @@ export default function AdminDashboard() {
     fetchLogs();
     fetchAiConfig();
     
-    // Poll configs, telemetry logs, and AI status every 2 seconds to keep dashboard fully live-syncing!
+    // Poll configs, telemetry logs, and AI status every 5 seconds to keep dashboard live-syncing
+    // without exhausting the 30/min rate limit (12/min at 5s is safe)
     const interval = setInterval(() => {
       fetchConfigs();
       fetchLogs();
       fetchAiConfig();
-    }, 2000);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
