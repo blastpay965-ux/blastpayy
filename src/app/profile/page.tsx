@@ -15,6 +15,7 @@ export default function ProfilePage() {
   
   const [activeTab, setActiveTab] = useState<'overview' | 'wallet' | 'history' | 'security'>('overview');
   const [isWalletOpen, setIsWalletOpen] = useState(false);
+  const [walletTab, setWalletTab] = useState<'deposit' | 'withdraw'>('deposit');
   const [pinChangeSuccess, setPinChangeSuccess] = useState(false);
 
 
@@ -106,13 +107,28 @@ export default function ProfilePage() {
                   <div className={styles.statValue}>
                     {balance.toFixed(2)} <span className={styles.currency}>NGN</span>
                   </div>
-                  <button 
-                    className="btn btn-secondary" 
-                    style={{marginTop: '1rem', width: '100%'}}
-                    onClick={() => router.push('/withdraw')}
-                  >
-                    Withdraw Funds
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                    <button 
+                      className="btn btn-primary" 
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        setWalletTab('deposit');
+                        setIsWalletOpen(true);
+                      }}
+                    >
+                      Deposit
+                    </button>
+                    <button 
+                      className="btn btn-secondary" 
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        setWalletTab('withdraw');
+                        setIsWalletOpen(true);
+                      }}
+                    >
+                      Withdraw
+                    </button>
+                  </div>
                 </div>
 
                 <div className={styles.statCard}>
@@ -185,14 +201,20 @@ export default function ProfilePage() {
                     <button 
                       className="btn btn-primary"
                       style={{ flex: 1 }}
-                      onClick={() => setIsWalletOpen(true)}
+                      onClick={() => {
+                        setWalletTab('deposit');
+                        setIsWalletOpen(true);
+                      }}
                     >
                       Instant Deposit
                     </button>
                     <button 
                       className="btn btn-secondary"
                       style={{ flex: 1 }}
-                      onClick={() => router.push('/withdraw')}
+                      onClick={() => {
+                        setWalletTab('withdraw');
+                        setIsWalletOpen(true);
+                      }}
                     >
                       Instant Withdrawal
                     </button>
@@ -379,7 +401,7 @@ export default function ProfilePage() {
 
       </div>
 
-      <WalletPanel isOpen={isWalletOpen} onClose={() => setIsWalletOpen(false)} />
+      <WalletPanel isOpen={isWalletOpen} onClose={() => setIsWalletOpen(false)} initialTab={walletTab} />
     </div>
   );
 }

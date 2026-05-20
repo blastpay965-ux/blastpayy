@@ -4,22 +4,30 @@ import { useWallet } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
 import { X, ArrowDownToLine, ArrowUpFromLine, History, Lock, Check, Copy, ShieldCheck, Sparkles } from 'lucide-react';
 import styles from './WalletPanel.module.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFlutterwave } from 'flutterwave-react-v3';
 import Link from 'next/link';
 
 interface WalletPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: 'deposit' | 'withdraw' | 'history';
 }
 
-export default function WalletPanel({ isOpen, onClose }: WalletPanelProps) {
+export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }: WalletPanelProps) {
   const { balance, deposit, transactions, syncWallet } = useWallet();
   const { user, logout } = useAuth();
   
   const [amount, setAmount] = useState('5000');
-  const [activeTab, setActiveTab] = useState<'deposit'|'withdraw'|'history'>('deposit');
+  const [activeTab, setActiveTab] = useState<'deposit'|'withdraw'|'history'>(initialTab);
   const [message, setMessage] = useState('');
+
+  // Sync tab with initialTab prop when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   // Manual & Automated Bank Transfer States
   const [senderInfo, setSenderInfo] = useState('');
