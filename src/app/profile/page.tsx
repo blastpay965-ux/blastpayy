@@ -117,7 +117,7 @@ export default function ProfilePage() {
                   <div className={styles.statValue}>
                     {isBalanceHidden ? '••••••' : balance.toFixed(2)} <span className={styles.currency}>NGN</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                  <div className={styles.cardButtons}>
                     <button 
                       className="btn btn-primary" 
                       style={{ flex: 1 }}
@@ -201,7 +201,7 @@ export default function ProfilePage() {
               <h1 className={styles.title}>Wallet & Limits</h1>
               
               <div className={styles.statsGrid}>
-                <div className={styles.statCard} style={{ gridColumn: 'span 2' }}>
+                <div className={`${styles.statCard} ${styles.doubleSpan}`}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                     <span className={styles.statLabel}>Available Balance</span>
                     <button 
@@ -213,11 +213,11 @@ export default function ProfilePage() {
                       {isBalanceHidden ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                   </div>
-                  <div className={styles.statValue} style={{ fontSize: '3rem', margin: '0.5rem 0' }}>
+                  <div className={styles.largeValue}>
                     ₦{isBalanceHidden ? '••••••' : balance.toFixed(2)}
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                  <div className={styles.cardButtons}>
                     <button 
                       className="btn btn-primary"
                       style={{ flex: 1 }}
