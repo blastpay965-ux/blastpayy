@@ -26,6 +26,8 @@ interface WalletContextType {
   deductBalance: (amount: number) => void;  // legacy alias
   syncWallet: () => Promise<void>;
   deductOptimistic: (amount: number) => void;
+  isBalanceHidden: boolean;
+  toggleHideBalance: () => void;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -35,8 +37,28 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isFrozen, setIsFrozen] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
+  const [isBalanceHidden, setIsBalanceHidden] = useState<boolean>(false);
   const { user, logout } = useAuth();
   const realtimeChannelRef = useRef<ReturnType<ReturnType<typeof getSupabaseBrowser>['channel']> | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('hide_balance');
+      if (stored === 'true') {
+        setIsBalanceHidden(true);
+      }
+    }
+  }, []);
+
+  const toggleHideBalance = useCallback(() => {
+    setIsBalanceHidden(prev => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hide_balance', next ? 'true' : 'false');
+      }
+      return next;
+    });
+  }, []);
 
   // ── Sync wallet from server ───────────────────────────────────────
   const syncWallet = useCallback(async () => {
@@ -172,7 +194,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <WalletContext.Provider
-      value={{ balance, transactions, isFrozen, isBanned, deposit, withdraw, deduct, addBalance, deductBalance, syncWallet, deductOptimistic }}
+      value={{ balance, transactions, isFrozen, isBanned, deposit, withdraw, deduct, addBalance, deductBalance, syncWallet, deductOptimistic, isBalanceHidden, toggleHideBalance }}
     >
       {/* GLOBAL BAN/FREEZE NOTIFICATION OVERLAY */}
       {(isBanned || isFrozen) && (

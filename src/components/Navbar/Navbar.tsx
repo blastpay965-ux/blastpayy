@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useWallet } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
-import { Menu, X, User, Wallet, Dices, Bomb, PlaneTakeoff, LogIn, Settings } from 'lucide-react';
+import { Menu, X, User, Wallet, Dices, Bomb, PlaneTakeoff, LogIn, Settings, Eye, EyeOff } from 'lucide-react';
 import styles from './Navbar.module.css';
 import WalletPanel from '@/components/Wallet/WalletPanel';
 import Logo from '@/components/Logo/Logo';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { balance } = useWallet();
+  const { balance, isBalanceHidden, toggleHideBalance } = useWallet();
   const { user } = useAuth();
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -56,11 +56,19 @@ export default function Navbar() {
               </div>
             ) : (
               <>
-                <div className={styles.wallet} onClick={() => setIsWalletOpen(true)} style={{cursor: 'pointer'}}>
-                  <div className={styles.balanceWrapper}>
-                    <span className={styles.balance}>{balance.toFixed(2)} NGN</span>
+                <div className={styles.wallet}>
+                  <div className={styles.balanceWrapper} onClick={() => setIsWalletOpen(true)} style={{cursor: 'pointer'}}>
+                    <span className={styles.balance}>{isBalanceHidden ? '••••••' : balance.toFixed(2)} NGN</span>
                   </div>
-                  <button className={styles.depositBtn}>Deposit</button>
+                  <button 
+                    type="button" 
+                    className={styles.eyeToggleBtn}
+                    onClick={toggleHideBalance}
+                    title={isBalanceHidden ? "Show Balance" : "Hide Balance"}
+                  >
+                    {isBalanceHidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                  <button className={styles.depositBtn} onClick={() => setIsWalletOpen(true)}>Deposit</button>
                 </div>
                 
                 <Link href="/profile" className={styles.userBtn}>
@@ -95,8 +103,15 @@ export default function Navbar() {
                   </span>
                   <Wallet size={16} color="var(--accent-primary)" />
                 </div>
-                <div className={styles.mobileWalletBalance}>
-                  {balance.toFixed(2)} NGN
+                <div className={styles.mobileWalletBalance} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{isBalanceHidden ? '••••••' : balance.toFixed(2)} NGN</span>
+                  <button 
+                    type="button" 
+                    onClick={toggleHideBalance}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
+                  >
+                    {isBalanceHidden ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
                 <button 
                   className={styles.depositBtn}

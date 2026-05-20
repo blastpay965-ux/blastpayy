@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useWallet } from '@/context/WalletContext';
 import styles from './page.module.css';
-import { User, Wallet, History, Shield, LogOut, CheckCircle2, ShieldAlert, Key } from 'lucide-react';
+import { User, Wallet, History, Shield, LogOut, CheckCircle2, ShieldAlert, Key, Eye, EyeOff } from 'lucide-react';
 import WalletPanel from '@/components/Wallet/WalletPanel';
 
 export default function ProfilePage() {
   const { user, isLoading, logout } = useAuth();
-  const { balance, transactions } = useWallet();
+  const { balance, transactions, isBalanceHidden, toggleHideBalance } = useWallet();
   const router = useRouter();
   
   const [activeTab, setActiveTab] = useState<'overview' | 'wallet' | 'history' | 'security'>('overview');
@@ -103,9 +103,19 @@ export default function ProfilePage() {
               
               <div className={styles.statsGrid}>
                 <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Available Balance</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span className={styles.statLabel}>Available Balance</span>
+                    <button 
+                      type="button" 
+                      onClick={toggleHideBalance}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
+                      title={isBalanceHidden ? "Show Balance" : "Hide Balance"}
+                    >
+                      {isBalanceHidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   <div className={styles.statValue}>
-                    {balance.toFixed(2)} <span className={styles.currency}>NGN</span>
+                    {isBalanceHidden ? '••••••' : balance.toFixed(2)} <span className={styles.currency}>NGN</span>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
                     <button 
@@ -192,9 +202,19 @@ export default function ProfilePage() {
               
               <div className={styles.statsGrid}>
                 <div className={styles.statCard} style={{ gridColumn: 'span 2' }}>
-                  <span className={styles.statLabel}>Available Balance</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span className={styles.statLabel}>Available Balance</span>
+                    <button 
+                      type="button" 
+                      onClick={toggleHideBalance}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
+                      title={isBalanceHidden ? "Show Balance" : "Hide Balance"}
+                    >
+                      {isBalanceHidden ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                   <div className={styles.statValue} style={{ fontSize: '3rem', margin: '0.5rem 0' }}>
-                    ₦{balance.toFixed(2)}
+                    ₦{isBalanceHidden ? '••••••' : balance.toFixed(2)}
                   </div>
                   
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>

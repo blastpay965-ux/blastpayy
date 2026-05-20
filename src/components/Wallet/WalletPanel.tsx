@@ -2,7 +2,7 @@
 
 import { useWallet } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
-import { X, ArrowDownToLine, ArrowUpFromLine, History, Lock, Check, Copy, ShieldCheck, Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, ArrowDownToLine, ArrowUpFromLine, History, Lock, Check, Copy, ShieldCheck, Sparkles, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import styles from './WalletPanel.module.css';
 import { useState, useEffect } from 'react';
 import { useFlutterwave } from 'flutterwave-react-v3';
@@ -28,7 +28,7 @@ interface WalletPanelProps {
 }
 
 export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }: WalletPanelProps) {
-  const { balance, deposit, transactions, syncWallet } = useWallet();
+  const { balance, deposit, transactions, syncWallet, isBalanceHidden, toggleHideBalance } = useWallet();
   const { user, logout } = useAuth();
   
   const [amount, setAmount] = useState('5000');
@@ -209,7 +209,17 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
             <div className={styles.avatar} />
             <div>
               <h3>{user?.username || 'Guest'}</h3>
-              <span className={styles.balance}>{balance.toFixed(2)} NGN</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className={styles.balance}>{isBalanceHidden ? '••••••' : balance.toFixed(2)} NGN</span>
+                <button 
+                  type="button" 
+                  onClick={toggleHideBalance}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
+                  title={isBalanceHidden ? "Show Balance" : "Hide Balance"}
+                >
+                  {isBalanceHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
             </div>
           </div>
           <button className={styles.closeBtn} onClick={onClose}>

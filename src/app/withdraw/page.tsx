@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useWallet } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
-import { ArrowLeft, CheckCircle2, Loader2, Landmark } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, Landmark, Eye, EyeOff } from 'lucide-react';
 import styles from './withdraw.module.css';
 
 const NIGERIAN_BANKS = [
