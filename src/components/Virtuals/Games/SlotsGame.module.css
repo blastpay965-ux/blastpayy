@@ -96,3 +96,19 @@
   from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
   to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
+
+@media (max-width: 768px) {
+  .container { padding: 1rem 0.5rem; }
+  .machine { padding: 1rem; gap: 1rem; }
+  .reel { width: 75px; height: 90px; font-size: 3rem; }
+  .reelsContainer { gap: 0.5rem; padding: 0.75rem; }
+  .paytable { gap: 0.5rem; flex-wrap: wrap; padding: 0.75rem; }
+  .paySymbol { font-size: 1.2rem; }
+}
+
+@media (max-width: 480px) {
+  .reel { width: 60px; height: 75px; font-size: 2.5rem; }
+  .reelsContainer { gap: 0.35rem; padding: 0.5rem; }
+  .winText { font-size: 1.75rem; }
+  .machine { border-radius: 10px; border-width: 2px; }
+}

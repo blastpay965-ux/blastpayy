@@ -119,3 +119,19 @@
   border-color: #fdd835;
   background-color: rgba(253, 216, 53, 0.2);
 }
+
+@media (max-width: 768px) {
+  .container { padding: 1rem 0.75rem; gap: 1.5rem; }
+  .playingCard { width: 72px; height: 108px; margin-right: -28px; }
+  .cardRank { font-size: 1.5rem; }
+  .cardSuit { font-size: 2rem; }
+  .betOptions { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  .container { padding: 0.75rem 0.5rem; gap: 1rem; }
+  .playingCard { width: 55px; height: 82px; margin-right: -22px; }
+  .cardRank { font-size: 1.1rem; }
+  .cardSuit { font-size: 1.5rem; }
+  .winText, .loseText, .tieText { font-size: 1.75rem; }
+}

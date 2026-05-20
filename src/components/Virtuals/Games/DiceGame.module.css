@@ -170,3 +170,21 @@
   border: 1px solid #2F4553;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+
+@media (max-width: 768px) {
+  .container { padding: 1rem 0.5rem; }
+  .mainDisplay { padding: 1.5rem 1.25rem; border-radius: 12px; }
+  .rollResult { font-size: 4rem; margin-bottom: 1rem; }
+  .sliderContainer { margin: 1.5rem 0; }
+  .statsGrid { gap: 0.5rem; margin-top: 1rem; }
+  .statBox { padding: 0.75rem 0.5rem; }
+  .statValue { font-size: 1rem; }
+  .toggleBtn { padding: 0.4rem 1rem; font-size: 0.85rem; }
+}
+
+@media (max-width: 480px) {
+  .rollResult { font-size: 3rem; }
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+  .mainDisplay { padding: 1rem 0.75rem; }
+  .sliderLabels { font-size: 0.75rem; }
+}

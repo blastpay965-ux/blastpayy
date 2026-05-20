@@ -88,3 +88,16 @@
   from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
   to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
+
+@media (max-width: 768px) {
+  .container { padding: 1rem 0.5rem; }
+  .wheelWrapper { width: 220px; height: 220px; }
+  .segment { font-size: 0.9rem; }
+  .winText, .loseText { font-size: 1.75rem; }
+}
+
+@media (max-width: 480px) {
+  .wheelWrapper { width: 180px; height: 180px; }
+  .wheelPointer { border-left-width: 10px; border-right-width: 10px; border-top-width: 20px; top: -12px; }
+  .segment { font-size: 0.75rem; }
+}

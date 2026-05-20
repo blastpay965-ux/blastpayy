@@ -110,3 +110,17 @@
   0% { transform: scale(0.5); }
   100% { transform: scale(1); }
 }
+
+@media (max-width: 768px) {
+  .container { padding: 0.75rem 0.5rem; }
+  .grid { gap: 0.35rem; padding: 0.75rem; margin-bottom: 1rem; }
+  .numberTile { width: 38px; height: 38px; font-size: 0.9rem; }
+  .paytable { gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+  .payItem { padding: 0.4rem 0.6rem; }
+}
+
+@media (max-width: 480px) {
+  .grid { grid-template-columns: repeat(5, 1fr); gap: 0.3rem; }
+  .numberTile { width: 100%; height: 36px; font-size: 0.8rem; }
+  .paytable { gap: 0.35rem; }
+}

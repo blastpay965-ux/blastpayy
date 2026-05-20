@@ -111,3 +111,20 @@
   font-size: 1.25rem;
   margin-bottom: 1rem;
 }
+
+@media (max-width: 768px) {
+  .container { padding: 1rem 0.5rem; gap: 1rem; }
+  .playingCard { width: 90px; height: 130px; }
+  .cardRank { font-size: 1.75rem; }
+  .cardSuit { font-size: 2.5rem; }
+  .cardDisplay { gap: 1rem; }
+  .hiloBtn { padding: 0.75rem 0.5rem; }
+}
+
+@media (max-width: 480px) {
+  .playingCard { width: 72px; height: 110px; }
+  .cardRank { font-size: 1.4rem; }
+  .cardSuit { font-size: 2rem; }
+  .actionRow { gap: 0.5rem; }
+  .cardDisplay { gap: 0.5rem; }
+}

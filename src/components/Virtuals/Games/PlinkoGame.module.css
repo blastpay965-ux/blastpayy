@@ -98,3 +98,17 @@
   from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
   to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
+
+@media (max-width: 768px) {
+  .container { padding: 0.5rem 0.25rem; padding-bottom: 1.5rem; }
+  .pegRow { gap: 1.25rem; }
+  .peg { width: 9px; height: 9px; }
+  .bin { font-size: 0.65rem; padding: 0.6rem 0; }
+  .binsRow { padding: 0 2%; }
+}
+
+@media (max-width: 480px) {
+  .pegRow { gap: 0.9rem; }
+  .peg { width: 7px; height: 7px; }
+  .bin { font-size: 0.55rem; padding: 0.5rem 0; }
+}

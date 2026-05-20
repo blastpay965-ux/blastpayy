@@ -52,3 +52,15 @@
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
 }
+
+@media (max-width: 768px) {
+  .container { padding: 1rem 0.5rem; }
+  .mainDisplay { padding: 2rem 1.5rem; }
+  .multiplierResult { font-size: 5rem; }
+  .targetLabel { font-size: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .multiplierResult { font-size: 4rem; }
+  .mainDisplay { padding: 1.5rem 1rem; border-radius: 12px; }
+}

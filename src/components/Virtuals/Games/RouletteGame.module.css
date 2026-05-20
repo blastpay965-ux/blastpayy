@@ -111,3 +111,19 @@
 
 .winText { color: #00e676; font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
 .loseText { color: #ff4444; font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+
+@media (max-width: 768px) {
+  .container { padding: 1rem 0.5rem; gap: 1rem; }
+  .wheelContainer { width: 200px; height: 200px; }
+  .wheelResult { font-size: 4rem; }
+  .betOption { padding: 0.6rem 0.4rem; font-size: 0.85rem; }
+  .board { padding: 0.5rem; }
+}
+
+@media (max-width: 480px) {
+  .wheelContainer { width: 160px; height: 160px; border-width: 8px; }
+  .wheelResult { font-size: 3rem; }
+  .betOption { padding: 0.5rem 0.25rem; font-size: 0.75rem; }
+  .boardRow { gap: 0.35rem; }
+  .board { gap: 0.35rem; }
+}
