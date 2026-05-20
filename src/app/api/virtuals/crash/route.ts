@@ -36,31 +36,27 @@ async function updateGameState() {
   const delta = Math.min((now - gameState.lastUpdate) / 1000, 1.0);
   gameState.lastUpdate = now;
 
+  // Fetch live admin config from Supabase DB on EVERY tick to allow immediate mid-air rigging!
+  // This ensures all Vercel Lambdas sync up to the same rig instantly.
+  const config = await getAdminConfig();
+  const houseEdge      = config.crashHouseEdge ?? 5;
+  const maxMultiplier  = config.crashMaxMultiplier ?? 100;
+  const isRigged       = config.isRigged ?? false;
+  const nextOverride   = config.nextCrashMultiplier ?? null;
+  const globalRig      = config.globalRigOutcome ?? null;
+
   if (gameState.status === 'betting') {
     gameState.timeLeft -= delta;
     if (gameState.timeLeft <= 0) {
       gameState.status = 'playing';
       gameState.multiplier = 1.00;
 
-      // Fetch live admin config from Supabase DB
-      const config = await getAdminConfig();
-      const houseEdge      = config.crashHouseEdge ?? 5;
-      const maxMultiplier  = config.crashMaxMultiplier ?? 100;
-      const isRigged       = config.isRigged ?? false;
-      const nextOverride   = config.nextCrashMultiplier ?? null;
-      const globalRig      = config.globalRigOutcome ?? null;
-
       if (nextOverride !== null) {
-        // Admin set a specific crash point — use it once, then clear
         gameState.targetCrash = Math.max(1.00, nextOverride);
-        // Consume the override immediately so it only fires for this round
-        updateAdminConfig({ nextCrashMultiplier: null }).catch(() => {});
       } else if (isRigged || globalRig === 'lose') {
-        // Rigged to lose: crash at 1.00 (instant)
         gameState.targetCrash = 1.00;
         if (globalRig) updateAdminConfig({ globalRigOutcome: null }).catch(() => {});
       } else if (globalRig === 'win') {
-        // Rigged to win: set a very high crash point so player can easily cash out
         gameState.targetCrash = 50.00 + Math.random() * 50;
         updateAdminConfig({ globalRigOutcome: null }).catch(() => {});
       } else if (Math.random() < houseEdge / 100) {
@@ -72,7 +68,6 @@ async function updateGameState() {
 
       gameState.players = generatePlayers();
       
-      // Create round securely
       try {
         const seed = crypto.randomBytes(32).toString('hex');
         const round = await createGameRound('crash', seed);
@@ -83,8 +78,20 @@ async function updateGameState() {
       }
     }
   } else if (gameState.status === 'playing') {
+    // If admin sets a rig mid-flight, immediately update the target crash!
+    if (nextOverride !== null) {
+      gameState.targetCrash = Math.max(1.00, nextOverride);
+    } else if (isRigged || globalRig === 'lose') {
+      gameState.targetCrash = 1.00;
+    }
+
     // 0.07 makes it climb at a moderate, realistic Aviator pace
     gameState.multiplier += (gameState.multiplier * 0.07) * delta;
+
+    // If we just rigged it to a number LOWER than the current multiplier, force an instant crash at the current multiplier!
+    if (gameState.multiplier >= gameState.targetCrash) {
+       gameState.targetCrash = gameState.multiplier; 
+    }
 
     gameState.players.forEach((p) => {
       if (p.cashoutTarget && !p.cashedOutAt && gameState.multiplier >= p.cashoutTarget) {
@@ -100,12 +107,16 @@ async function updateGameState() {
       gameState.history.unshift(parseFloat(gameState.targetCrash.toFixed(2)));
       if (gameState.history.length > 20) gameState.history.pop();
       
-      // Complete round securely
+      // Clear the rig from the database now that the crash has occurred!
+      if (nextOverride !== null) {
+         updateAdminConfig({ nextCrashMultiplier: null }).catch(() => {});
+      }
+
       if (gameState.currentRoundId && gameState.currentServerSeed) {
         try {
           await completeGameRound(
             gameState.currentRoundId,
-            gameState.currentServerSeed, // In Crash, the server seed is the target crash hash (simplified)
+            gameState.currentServerSeed,
             JSON.stringify({ crashPoint: gameState.targetCrash })
           );
         } catch (err) {
