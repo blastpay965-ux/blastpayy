@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { Shield, Key, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import styles from './login.module.css';
@@ -10,7 +11,21 @@ export default function AdminLoginPage() {
   const [pin, setPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isSecretAuthorized, setIsSecretAuthorized] = useState<boolean | null>(null);
   const router = useRouter();
+
+  // Validate the secret gate parameter (?gate=secure) client-side to prevent Suspense errors on build
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const isGateOpen = params.get('gate') === 'secure' || sessionStorage.getItem('blastpay_admin_pin');
+      if (isGateOpen) {
+        setIsSecretAuthorized(true);
+      } else {
+        setIsSecretAuthorized(false);
+      }
+    }
+  }, []);
 
   // If already authorized, route immediately to dashboard
   useEffect(() => {
@@ -62,6 +77,13 @@ export default function AdminLoginPage() {
       setIsSubmitting(false);
     }
   };
+  if (isSecretAuthorized === false) {
+    return notFound();
+  }
+
+  if (isSecretAuthorized === null) {
+    return null;
+  }
 
   return (
     <div className={styles.container}>
