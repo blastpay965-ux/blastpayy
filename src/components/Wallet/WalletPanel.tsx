@@ -2,11 +2,22 @@
 
 import { useWallet } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
-import { X, ArrowDownToLine, ArrowUpFromLine, History, Lock, Check, Copy, ShieldCheck, Sparkles } from 'lucide-react';
+import { X, ArrowDownToLine, ArrowUpFromLine, History, Lock, Check, Copy, ShieldCheck, Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
 import styles from './WalletPanel.module.css';
 import { useState, useEffect } from 'react';
 import { useFlutterwave } from 'flutterwave-react-v3';
 import Link from 'next/link';
+
+const NIGERIAN_BANKS = [
+  { code: '058', name: 'Guaranty Trust Bank (GTBank)' },
+  { code: '057', name: 'Zenith Bank' },
+  { code: '999111', name: 'Kuda Bank' },
+  { code: '999262', name: 'OPay' },
+  { code: '044', name: 'Access Bank' },
+  { code: '033', name: 'United Bank for Africa (UBA)' },
+  { code: '011', name: 'First Bank of Nigeria' },
+  { code: '050', name: 'Ecobank' },
+];
 
 interface WalletPanelProps {
   isOpen: boolean;
@@ -38,6 +49,46 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
   // Manual Withdrawal States
   const [withdrawBankName, setWithdrawBankName] = useState('');
   const [withdrawAccountNo, setWithdrawAccountNo] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('5000');
+  const [isResolving, setIsResolving] = useState(false);
+  const [resolvedName, setResolvedName] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // Resolve bank account details dynamically inside the modal
+  useEffect(() => {
+    if (withdrawAccountNo.length === 10 && withdrawBankName) {
+      setIsResolving(true);
+      setResolvedName('');
+      setErrorMsg('');
+
+      const resolveAccount = async () => {
+        try {
+          const res = await fetch('/api/withdraw/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountNumber: withdrawAccountNo, bankCode: withdrawBankName }),
+          });
+          const result = await res.json();
+
+          if (res.ok && result.status === 'success') {
+            setResolvedName(result.data.account_name.toUpperCase());
+          } else {
+            setErrorMsg(result.error || 'Failed to verify account number.');
+          }
+        } catch (err) {
+          setErrorMsg('Verification system offline. Please try again.');
+        } finally {
+          setIsResolving(false);
+        }
+      };
+
+      const timer = setTimeout(resolveAccount, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setResolvedName('');
+      setIsResolving(false);
+    }
+  }, [withdrawAccountNo, withdrawBankName]);
 
   // Dedicated Business Account Coordinates
   const computedAccountNumber = '8055865414';
@@ -150,32 +201,38 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
   };
 
   const handleWithdraw = async () => {
-    const val = parseFloat(amount);
-    if (isNaN(val) || val < 100) return alert('Minimum withdrawal is ₦100.');
-    if (val > balance) return alert('Insufficient balance.');
-    if (!withdrawBankName.trim() || !withdrawAccountNo.trim()) return alert('Please enter your Bank Name and Account Number.');
+    const val = parseFloat(withdrawAmount);
+    if (!withdrawBankName) return alert('Please select a payout destination bank.');
+    if (withdrawAccountNo.length !== 10) return alert('Please enter a valid 10-digit account number.');
+    if (!resolvedName) return alert('Account number must be successfully verified.');
+    if (isNaN(val) || val <= 0) return alert('Please enter a valid withdrawal amount.');
+    if (val > balance) return alert('Insufficient funds in your casino wallet.');
 
     setIsClearing(true);
     setMessage('');
+    setErrorMsg('');
 
     try {
-      const res = await fetch('/api/wallet/manual-withdraw', {
+      const res = await fetch('/api/withdraw/payout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: val, bankName: withdrawBankName.trim(), accountNumber: withdrawAccountNo.trim() })
+        body: JSON.stringify({ accountNumber: withdrawAccountNo, bankCode: withdrawBankName, amount: val }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`Withdrawal logged! Status: PENDING admin payout.`);
+      const result = await res.json();
+
+      if (res.ok && result.status === 'success') {
+        setMessage(`Withdrawal of ₦${val.toLocaleString()} logged successfully! Status: PENDING.`);
         setWithdrawBankName('');
         setWithdrawAccountNo('');
+        setWithdrawAmount('');
+        setResolvedName('');
         syncWallet();
         setTimeout(() => setMessage(''), 4000);
       } else {
-        setMessage(`Withdrawal Error: ${data.error || 'Server error'}`);
+        setErrorMsg(result.error || 'Payout transfer failed. Try again.');
       }
-    } catch {
-      setMessage('Failed to request withdrawal due to network issue.');
+    } catch (err) {
+      setErrorMsg('Transfer system encountered an error. Please try again.');
     } finally {
       setIsClearing(false);
     }
@@ -249,14 +306,6 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
             )
           ) : (
             <div className={styles.formArea}>
-              {activeTab === 'withdraw' && (
-                <div className={styles.linkToWithdraw}>
-                  <p>Looking for bank payouts? Use our dedicated channel to withdraw directly to your GTBank, Zenith, Kuda, or OPay account.</p>
-                  <Link href="/withdraw" onClick={onClose} className="btn btn-primary full-width" style={{ textDecoration: 'none', textAlign: 'center' }}>
-                    Go to NGN Payout Portal
-                  </Link>
-                </div>
-              )}
 
               {activeTab === 'deposit' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -422,50 +471,77 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
                 </div>
               ) : (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                     <div>
-                      <label className={styles.gatewayInputLabel}>Bank/Wallet Name</label>
-                      <input 
-                        type="text" 
+                      <label className={styles.gatewayInputLabel}>Select Destination Bank</label>
+                      <select 
                         value={withdrawBankName} 
                         onChange={e => setWithdrawBankName(e.target.value)}
                         className={styles.gatewayInput}
-                        placeholder="e.g. OPay, Moniepoint"
-                      />
+                        style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }}
+                        disabled={isClearing}
+                      >
+                        <option value="">Choose Bank...</option>
+                        {NIGERIAN_BANKS.map((b) => (
+                          <option key={b.code} value={b.code}>{b.name}</option>
+                        ))}
+                      </select>
                     </div>
+
                     <div>
-                      <label className={styles.gatewayInputLabel}>Account Number</label>
+                      <label className={styles.gatewayInputLabel}>NUBAN Account Number (10 Digits)</label>
                       <input 
                         type="text" 
+                        maxLength={10}
                         value={withdrawAccountNo} 
-                        onChange={e => setWithdrawAccountNo(e.target.value)}
+                        onChange={e => setWithdrawAccountNo(e.target.value.replace(/\D/g, ''))}
                         className={styles.gatewayInput}
-                        placeholder="10-digit number"
+                        placeholder="e.g. 0123456789"
+                        disabled={isClearing}
                       />
+                      {isResolving && (
+                        <div style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <Loader2 size={12} className="animate-spin" /> Resolving NUBAN Account...
+                        </div>
+                      )}
+                      {resolvedName && (
+                        <div style={{ color: '#00e676', fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
+                          <CheckCircle2 size={12} /> Account Verified: {resolvedName}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className={styles.gatewayInputLabel}>Amount to Withdraw (NGN)</label>
+                      <input 
+                        type="number" 
+                        value={withdrawAmount} 
+                        onChange={e => setWithdrawAmount(e.target.value)}
+                        className={styles.gatewayInput}
+                        placeholder="₦0.00"
+                        disabled={isClearing}
+                      />
+                      <div className={styles.quickAmounts} style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                        <button type="button" onClick={() => setWithdrawAmount('2000')}>₦2K</button>
+                        <button type="button" onClick={() => setWithdrawAmount('5000')}>₦5K</button>
+                        <button type="button" onClick={() => setWithdrawAmount('10000')}>₦10K</button>
+                        <button type="button" onClick={() => setWithdrawAmount(Math.floor(balance).toString())}>MAX</button>
+                      </div>
                     </div>
                   </div>
-                  
-                  <label className={styles.gatewayInputLabel}>Amount to Withdraw (NGN)</label>
-                  <input 
-                    type="number" 
-                    value={amount} 
-                    onChange={e => setAmount(e.target.value)}
-                    className={styles.gatewayInput}
-                    style={{ marginBottom: '0.25rem' }}
-                  />
-                  <div className={styles.quickAmounts} style={{ marginBottom: '1rem' }}>
-                    <button onClick={() => setAmount('2000')}>₦2K</button>
-                    <button onClick={() => setAmount('5000')}>₦5K</button>
-                    <button onClick={() => setAmount('10000')}>₦10K</button>
-                    <button onClick={() => setAmount(Math.floor(balance).toString())}>MAX</button>
-                  </div>
+
+                  {errorMsg && (
+                    <div style={{ color: '#ff4444', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center', margin: '0.5rem 0' }}>
+                      {errorMsg}
+                    </div>
+                  )}
 
                   {message && <div className={styles.message}>{message}</div>}
 
                   <button 
                     className={`btn btn-primary ${styles.submitBtn}`}
                     onClick={handleWithdraw}
-                    disabled={isClearing}
+                    disabled={isClearing || isResolving}
                   >
                     {isClearing ? 'Processing Request...' : 'Request Payout'}
                   </button>
