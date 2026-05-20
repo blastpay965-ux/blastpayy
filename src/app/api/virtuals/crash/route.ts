@@ -79,22 +79,40 @@ async function getOrCreateRound(config: Awaited<ReturnType<typeof getAdminConfig
   const supabase = getAdminClient();
   const now = Date.now();
 
-  // Try to get the current active/recent round
+  // Try to get the current active/recent round from game_rounds table
   const { data: existing } = await supabase
-    .from('crash_rounds')
+    .from('game_rounds')
     .select('*')
-    .order('start_time', { ascending: false })
+    .eq('game_type', 'crash')
+    .order('created_at', { ascending: false })
     .limit(1)
     .single();
 
   if (existing) {
-    const elapsed = now - existing.start_time;
+    const startTime = new Date(existing.created_at).getTime();
+    const elapsed = now - startTime;
     const roundPhaseEnd = BETTING_DURATION_MS + MAX_FLIGHT_MS + CRASH_SHOW_MS;
 
     // If round is still ongoing, return it
     if (elapsed < roundPhaseEnd) {
-      return existing as CrashRound;
+      const outcome = existing.final_outcome ? JSON.parse(existing.final_outcome) : null;
+      return {
+        id: existing.id,
+        seed: existing.server_seed,
+        start_time: startTime,
+        crash_point: outcome?.crash_point ?? 1.00,
+        status: elapsed < BETTING_DURATION_MS ? 'betting' : 'playing',
+        history: outcome?.history ?? [1.23, 5.40, 1.05, 2.15, 12.04, 1.83]
+      } as CrashRound;
     }
+  }
+
+  // Before creating a new round, let's mark the previous active round as completed if it exists
+  if (existing && existing.status === 'active') {
+    await supabase
+      .from('game_rounds')
+      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .eq('id', existing.id);
   }
 
   // Create a new round
@@ -112,31 +130,51 @@ async function getOrCreateRound(config: Awaited<ReturnType<typeof getAdminConfig
     updateAdminConfig({ globalRigOutcome: null }).catch(() => {});
   }
 
-  const history: number[] = existing?.history
-    ? [parseFloat(existing.crash_point?.toFixed(2) ?? '1.00'), ...existing.history].slice(0, 20)
-    : [1.23, 5.40, 1.05, 2.15, 12.04, 1.83];
+  // Extract history from previous outcome
+  let history: number[] = [1.23, 5.40, 1.05, 2.15, 12.04, 1.83];
+  if (existing) {
+    const outcome = existing.final_outcome ? JSON.parse(existing.final_outcome) : null;
+    const prevCrashPoint = outcome?.crash_point ?? 1.00;
+    const prevHistory = outcome?.history ?? [];
+    history = [parseFloat(prevCrashPoint.toFixed(2)), ...prevHistory].slice(0, 20);
+  }
 
-  const newRound: Omit<CrashRound, 'id'> = {
-    seed,
-    start_time: now,
+  const finalOutcomeJson = JSON.stringify({
     crash_point: crashPoint,
-    status: 'betting',
-    history,
-  };
+    history
+  });
 
   const { data: created, error } = await supabase
-    .from('crash_rounds')
-    .insert(newRound)
+    .from('game_rounds')
+    .insert({
+      game_type: 'crash',
+      server_seed: seed,
+      status: 'active',
+      final_outcome: finalOutcomeJson
+    })
     .select()
     .single();
 
   if (error || !created) {
-    // Fallback: if table doesn't exist yet, return an ephemeral round
-    console.error('crash_rounds table missing — run migration. Falling back to ephemeral round.');
-    return { id: 'ephemeral', ...newRound } as CrashRound;
+    console.error('game_rounds table failed to insert — run migration. Falling back to ephemeral round.', error);
+    return {
+      id: 'ephemeral',
+      seed,
+      start_time: now,
+      crash_point: crashPoint,
+      status: 'betting',
+      history,
+    } as CrashRound;
   }
 
-  return created as CrashRound;
+  return {
+    id: created.id,
+    seed: created.server_seed,
+    start_time: new Date(created.created_at).getTime(),
+    crash_point: crashPoint,
+    status: 'betting',
+    history
+  } as CrashRound;
 }
 
 // ─── COMPUTE CURRENT GAME STATE FROM TIME ─────────────────────────────────────
