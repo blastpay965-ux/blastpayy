@@ -27,26 +27,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Please select a destination bank.' }, { status: 400 });
     }
 
-    const flwSecret = process.env.FLUTTERWAVE_SECRET_KEY;
-    if (!flwSecret) {
-      return NextResponse.json({ error: 'Payment gateway is not configured.' }, { status: 500 });
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackSecret) {
+      return NextResponse.json({ error: 'Paystack is not configured in environment variables.' }, { status: 500 });
     }
 
-    const flwResponse = await fetch('https://api.flutterwave.com/v3/accounts/resolve', {
-      method: 'POST',
+    const paystackUrl = `https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`;
+    const paystackResponse = await fetch(paystackUrl, {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${flwSecret}`,
+        'Authorization': `Bearer ${paystackSecret}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        account_number: accountNumber,
-        account_bank: bankCode,
-      }),
     });
 
-    const result = await flwResponse.json();
+    const result = await paystackResponse.json();
 
-    if (flwResponse.ok && result.status === 'success') {
+    if (paystackResponse.ok && result.status === true) {
       return NextResponse.json({
         status: 'success',
         data: {

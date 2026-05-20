@@ -11,12 +11,14 @@ import Link from 'next/link';
 const NIGERIAN_BANKS = [
   { code: '058', name: 'Guaranty Trust Bank (GTBank)' },
   { code: '057', name: 'Zenith Bank' },
-  { code: '999111', name: 'Kuda Bank' },
-  { code: '999262', name: 'OPay' },
+  { code: '50211', name: 'Kuda Bank' },
+  { code: '50582', name: 'OPay' },
   { code: '044', name: 'Access Bank' },
   { code: '033', name: 'United Bank for Africa (UBA)' },
   { code: '011', name: 'First Bank of Nigeria' },
   { code: '050', name: 'Ecobank' },
+  { code: '50515', name: 'Moniepoint Microfinance Bank' },
+  { code: '100033', name: 'PalmPay' }
 ];
 
 interface WalletPanelProps {
