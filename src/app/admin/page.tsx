@@ -29,7 +29,8 @@ import {
   LogOut,
   Key,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Bell
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -75,6 +76,10 @@ export default function AdminDashboard() {
   const [netCashFloat, setNetCashFloat] = useState(0);
   const [houseProfitDeficit, setHouseProfitDeficit] = useState(0);
   const [coverageRatio, setCoverageRatio] = useState(100);
+
+  // Operator Notification & High-Urgency Alarm Suite States
+  const [notificationPermission, setNotificationPermission] = useState<string>('default');
+  const [prevPendingLength, setPrevPendingLength] = useState(0);
 
   // Interaction UI states
   const [isLoading, setIsLoading] = useState(true);
@@ -254,6 +259,105 @@ export default function AdminDashboard() {
       alert('Network error. Transfer resolution failed.');
     }
   };
+
+  // 🔊 Synthesizes urgent warning beep-beep warning sequence locally without loading audio files
+  const playAlertSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      
+      const playBeep = (time: number, freq: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, time);
+        
+        gain.gain.setValueAtTime(0.35, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + duration - 0.02);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(time);
+        osc.stop(time + duration);
+      };
+      
+      playBeep(now, 880, 0.15); // Beep 1
+      playBeep(now + 0.2, 880, 0.15); // Beep 2
+      playBeep(now + 0.4, 1109.73, 0.35); // Beep 3 (High-pitch Alert)
+    } catch (e) {
+      console.warn('Audio Context failed to play alert sound:', e);
+    }
+  };
+
+  // Request browser Notification permissions
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      if (permission === 'granted') {
+        new Notification("📡 BlastPay Alerts Active", {
+          body: "You will now receive high-urgency notifications for pending deposits and withdrawals, even in background tabs!",
+          icon: "/icon.svg"
+        });
+        playAlertSound();
+      }
+    } else {
+      alert("Browser notifications are not supported in this environment.");
+    }
+  };
+
+  // Sync current notification state on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
+
+  // 🚨 Effect 1: Flash tab title when there are pending actions to grab background operator's attention
+  useEffect(() => {
+    if (pendingTransfers.length === 0) {
+      document.title = "BlastPay Operator Gate";
+      return;
+    }
+
+    let isAlertTitle = false;
+    const interval = setInterval(() => {
+      isAlertTitle = !isAlertTitle;
+      document.title = isAlertTitle 
+        ? `🚨 (${pendingTransfers.length}) PENDING ACTION! 🚨` 
+        : "BlastPay Operator Gate";
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      document.title = "BlastPay Operator Gate";
+    };
+  }, [pendingTransfers]);
+
+  // 🚨 Effect 2: Play high-urgency synthetic warning sounds and trigger push notifications on new incoming transactions
+  useEffect(() => {
+    const currentLength = pendingTransfers.length;
+    
+    if (currentLength > prevPendingLength) {
+      playAlertSound();
+
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        const lastTx = pendingTransfers[pendingTransfers.length - 1];
+        const typeStr = lastTx.type === 'deposit' ? 'DEPOSIT' : 'WITHDRAWAL';
+        new Notification(`🚨 PENDING ${typeStr} REQUEST! 🚨`, {
+          body: `Player [${lastTx.username || 'unknown'}] has requested a ${lastTx.type} of ₦${Number(lastTx.amount).toFixed(2)}. Action required immediately!`,
+          icon: "/icon.svg",
+          silent: false,
+          requireInteraction: true
+        });
+      }
+    }
+    
+    setPrevPendingLength(currentLength);
+  }, [pendingTransfers, prevPendingLength]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -640,7 +744,29 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <button 
+            type="button"
+            onClick={requestNotificationPermission}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              backgroundColor: notificationPermission === 'granted' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 68, 68, 0.1)',
+              border: `1px solid ${notificationPermission === 'granted' ? 'rgba(0, 230, 118, 0.3)' : 'rgba(255, 68, 68, 0.3)'}`,
+              color: notificationPermission === 'granted' ? '#00e676' : '#ff4444',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              padding: '0.4rem 0.75rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Bell size={12} className={notificationPermission !== 'granted' ? 'animate-bounce' : ''} />
+            {notificationPermission === 'granted' ? 'Alerts Active' : 'Enable Alerts'}
+          </button>
+
           <div className={styles.navStatusBadge}>
             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#00e676', boxShadow: '0 0 10px #00e676' }} className="animate-pulse" />
             SECURED GATE ACTIVE
