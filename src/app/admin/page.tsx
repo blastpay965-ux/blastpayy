@@ -278,15 +278,15 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Sync available profit amount in modal
+  // Sync available vault balance in modal
   useEffect(() => {
     if (showWithdrawProfitModal) {
-      setWithdrawAmount(Math.max(0, houseProfitDeficit).toFixed(2));
+      setWithdrawAmount(Math.max(0, netCashFloat).toFixed(2));
       setWithdrawError('');
       setWithdrawSuccess('');
       setWithdrawPin('');
     }
-  }, [showWithdrawProfitModal, houseProfitDeficit]);
+  }, [showWithdrawProfitModal, netCashFloat]);
 
   // Auth Guard
   useEffect(() => {
@@ -798,7 +798,7 @@ export default function AdminDashboard() {
                     }}
                   />
                   <div style={{ fontSize: '0.7rem', color: '#8c829d', marginTop: '0.25rem', textAlign: 'right' }}>
-                    Available Profits (True Surplus): ₦{Math.max(0, houseProfitDeficit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    Available Vault Balance: ₦{Math.max(0, netCashFloat).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
                 </div>
 
@@ -928,14 +928,12 @@ export default function AdminDashboard() {
                     <span className={styles.liquidityCardTrend} style={{ color: 'rgba(255,255,255,0.45)' }}>
                       Unclaimed game margin
                     </span>
-                    {houseProfitDeficit > 0 && (
-                      <button 
-                        onClick={() => setShowWithdrawProfitModal(true)}
-                        className={styles.quickActionBtn}
-                      >
-                        <CreditCard size={11} /> Payout Profit
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => setShowWithdrawProfitModal(true)}
+                      className={styles.quickActionBtn}
+                    >
+                      <CreditCard size={11} /> Payout Profit
+                    </button>
                   </div>
                 </div>
               </div>

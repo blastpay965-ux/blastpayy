@@ -406,9 +406,6 @@ export default function Home() {
           <div className={styles.heroText}>
             <h1>Provably Fair <br/><span className={styles.highlight}>BlastPay Gaming.</span></h1>
             <p>Play our exclusive Aviator crash game and Mines. Fast NGN payouts, massive multipliers.</p>
-            <div className={styles.heroActions}>
-              <Link href="/login" className="btn btn-primary">Play Games</Link>
-            </div>
           </div>
         </div>
       </section>

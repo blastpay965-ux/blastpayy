@@ -63,13 +63,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid withdrawal amount' }, { status: 400 });
     }
 
-    // Verify amount does not exceed available true house operating profits (unclaimed float)
+    // Verify amount does not exceed available net cash float (vault bankroll)
     const stats = await getAdminStats();
-    const trueHouseProfit = stats.houseProfitDeficit;
+    const vaultBalance = stats.netCashFloat;
 
-    if (val > trueHouseProfit) {
+    if (val > vaultBalance) {
       return NextResponse.json({ 
-        error: `Withdrawal amount exceeds available true operating profits (₦${trueHouseProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}). Discharging this payout would dip into active player deposits, causing a liquidity coverage deficit!` 
+        error: `Withdrawal amount exceeds available vault bankroll (₦${vaultBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}).` 
       }, { status: 400 });
     }
 
