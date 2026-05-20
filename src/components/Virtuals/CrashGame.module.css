@@ -178,6 +178,57 @@
   100% { transform: translate(300%, -300%) scale(0.5); opacity: 0; }
 }
 
+.cashoutPopup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(30, 215, 96, 0.15);
+  border: 2px solid #1ed760;
+  backdrop-filter: blur(8px);
+  padding: 1.5rem 3rem;
+  border-radius: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: cashoutPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  box-shadow: 0 0 40px rgba(30, 215, 96, 0.3);
+}
+
+.cashoutPopupTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1ed760;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.25rem;
+}
+
+.cashoutPopupMult {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(255,255,255,0.5);
+  line-height: 1;
+}
+
+.cashoutPopupAmount {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1ed760;
+  margin-top: 0.5rem;
+  background: rgba(0,0,0,0.5);
+  padding: 0.2rem 1rem;
+  border-radius: 20px;
+}
+
+@keyframes cashoutPop {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.8); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
 /* Betting controls panel layout */
 
 .controlPanel {

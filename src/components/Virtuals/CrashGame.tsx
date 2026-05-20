@@ -37,6 +37,7 @@ export default function CrashGame() {
   });
   const [visualMultiplier, setVisualMultiplier] = useState(1.0);
   const [isMuted, setIsMuted] = useState(false);
+  const [cashoutPopup, setCashoutPopup] = useState<{ amount: number, mult: number } | null>(null);
   
   // Panel 1 State
   const [bet1, setBet1] = useState<string>('10.00');
@@ -97,6 +98,8 @@ export default function CrashGame() {
           body: JSON.stringify({ betId: betId1, multiplier: mult, winAmount: wonAmount })
         });
         audioSystem.playCashout();
+        setCashoutPopup({ amount: wonAmount, mult });
+        setTimeout(() => setCashoutPopup(null), 2500);
       } catch (err) {
         console.error('Failed to cashout securely');
         setHasCashedOut1(false);
@@ -118,6 +121,8 @@ export default function CrashGame() {
           body: JSON.stringify({ betId: betId2, multiplier: mult, winAmount: wonAmount })
         });
         audioSystem.playCashout();
+        setCashoutPopup({ amount: wonAmount, mult });
+        setTimeout(() => setCashoutPopup(null), 2500);
       } catch (err) {
         console.error('Failed to cashout securely');
         setHasCashedOut2(false);
@@ -606,6 +611,14 @@ export default function CrashGame() {
       </div>
 
       <div className={styles.overlayText}>
+         {cashoutPopup && (
+           <div className={styles.cashoutPopup}>
+             <div className={styles.cashoutPopupTitle}>You Cashed Out!</div>
+             <div className={styles.cashoutPopupMult}>{cashoutPopup.mult.toFixed(2)}x</div>
+             <div className={styles.cashoutPopupAmount}>+ ₦{cashoutPopup.amount.toFixed(2)}</div>
+           </div>
+         )}
+
          {isBetting && (
             <div className={styles.waiting}>
               <div className={styles.propeller}></div>

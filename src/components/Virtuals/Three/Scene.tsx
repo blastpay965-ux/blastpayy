@@ -125,7 +125,9 @@ function GameEnvironment({ status, multiplier, modelType = 'rocket' }: SceneProp
   );
 }
 
-export default function Scene({ status, multiplier, modelType = 'rocket' }: SceneProps) {
+import React from 'react';
+
+const SceneComponent = ({ status, multiplier, modelType = 'rocket' }: SceneProps) => {
   return (
     <Canvas
       style={{ background: 'transparent' }}
@@ -144,3 +146,5 @@ export default function Scene({ status, multiplier, modelType = 'rocket' }: Scen
     </Canvas>
   );
 }
+
+export default React.memo(SceneComponent);
