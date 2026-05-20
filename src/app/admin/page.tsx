@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const [isPasscodeVerified, setIsPasscodeVerified] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState('');
   const [passcodeError, setPasscodeError] = useState('');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'rigging' | 'ledger' | 'telemetry'>('dashboard');
 
   // Admin Config States
   const [crashHouseEdge, setCrashHouseEdge] = useState(5);
@@ -609,18 +610,34 @@ export default function AdminDashboard() {
         </div>
 
         <div className={styles.navLinks}>
-          <a href="#dashboard" className={styles.navLink}>
+          <button 
+            type="button" 
+            className={`${styles.navLink} ${activeTab === 'dashboard' ? styles.navLinkActive : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
             📊 Dashboard
-          </a>
-          <a href="#overrides" className={styles.navLink}>
+          </button>
+          <button 
+            type="button" 
+            className={`${styles.navLink} ${activeTab === 'rigging' ? styles.navLinkActive : ''}`}
+            onClick={() => setActiveTab('rigging')}
+          >
             ⚙️ Odds Rigging
-          </a>
-          <a href="#ledger" className={styles.navLink}>
+          </button>
+          <button 
+            type="button" 
+            className={`${styles.navLink} ${activeTab === 'ledger' ? styles.navLinkActive : ''}`}
+            onClick={() => setActiveTab('ledger')}
+          >
             👥 Player Ledger
-          </a>
-          <a href="#telemetry" className={styles.navLink}>
+          </button>
+          <button 
+            type="button" 
+            className={`${styles.navLink} ${activeTab === 'telemetry' ? styles.navLinkActive : ''}`}
+            onClick={() => setActiveTab('telemetry')}
+          >
             📡 Live Telemetry
-          </a>
+          </button>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -836,21 +853,28 @@ export default function AdminDashboard() {
         )}
 
         {/* Top Header Section */}
-        <div id="dashboard" className={styles.headerSection}>
+        <div className={styles.headerSection}>
           <div className={styles.titleGroup}>
             <h1>BlastPay Advanced Terminal</h1>
-            <p>Hidden Backdoor Operators Panel & Game Manipulation Center</p>
+            <p style={{ minHeight: '1.2rem', transition: 'all 0.3s ease' }}>
+              {activeTab === 'dashboard' && '📊 Hidden Backdoor Operators Panel & Game Manipulation Center'}
+              {activeTab === 'rigging' && '⚙️ Real-Time Dynamic Rigging Engine & Mathematical Configurations'}
+              {activeTab === 'ledger' && '👥 Bank Transfer Verification Ledger & AI Settlement Agent'}
+              {activeTab === 'telemetry' && '📡 Live Telemetry Core Handshake Logs & Audit Trails'}
+            </p>
           </div>
           <div className={styles.liveBadge} style={{ background: 'rgba(255, 68, 68, 0.1)', color: '#ff4444', border: '1px solid rgba(255, 68, 68, 0.3)' }}>
             <Activity className="animate-pulse" size={14} /> Backdoor Active
           </div>
         </div>
 
-        {/* System Liquidity & Float Engine Section */}
-        <div className={styles.liquiditySection}>
-          <div className={styles.panelTitle} style={{ borderBottom: '1px solid rgba(163, 103, 255, 0.15)', color: '#a367ff', margin: 0, paddingBottom: '0.75rem' }}>
-            <Shield size={20} color="#a367ff" /> 🏦 SYSTEM LIQUIDITY & FLOAT ENGINE
-          </div>
+        {activeTab === 'dashboard' && (
+          <>
+            {/* System Liquidity & Float Engine Section */}
+            <div className={styles.liquiditySection}>
+              <div className={styles.panelTitle} style={{ borderBottom: '1px solid rgba(163, 103, 255, 0.15)', color: '#a367ff', margin: 0, paddingBottom: '0.75rem' }}>
+                <Shield size={20} color="#a367ff" /> 🏦 SYSTEM LIQUIDITY & FLOAT ENGINE
+              </div>
 
           <div className={styles.liquidityGrid}>
             <div className={styles.liquidityCardsGrid}>
@@ -1056,11 +1080,44 @@ export default function AdminDashboard() {
 
         </div>
 
-        {/* Advanced Game Manipulation Section */}
-        <div id="overrides" className={styles.glassPanel} style={{ border: '1px solid rgba(255, 68, 68, 0.25)', background: 'rgba(25, 10, 20, 0.65)' }}>
-          <div className={styles.panelTitle} style={{ color: '#ff4444' }}>
-            <ShieldAlert size={22} /> Advanced Real-Time Game Manipulation Override Engine
-          </div>
+            {/* SVG Growth Chart Panel */}
+            <div className={styles.glassPanel}>
+              <div>
+                <div className={styles.panelTitle}>
+                  <TrendingUp size={20} color="var(--accent-primary)" /> Platform Cumulative Growth Chart
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>
+                  Visual cash flow trends matching platform margin indices.
+                </p>
+
+                {/* Dynamic Bar Charts */}
+                <div className={styles.chartContainer}>
+                  <div className={styles.chartBar} style={{ height: '30%' }} />
+                  <div className={styles.chartBar} style={{ height: '45%' }} />
+                  <div className={styles.chartBar} style={{ height: '35%' }} />
+                  <div className={styles.chartBar} style={{ height: '60%' }} />
+                  <div className={styles.chartBar} style={{ height: '55%' }} />
+                  <div className={styles.chartBar} style={{ height: '80%' }} />
+                  <div className={styles.chartBar} style={{ height: `${Math.min(100, Math.max(10, growthPercent * 5))}%` }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                  <Info size={14} color="var(--accent-primary)" /> Audit sandbox logs in the Next.js server console terminal.
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'rigging' && (
+          <>
+            {/* Advanced Game Manipulation Section */}
+            <div className={styles.glassPanel} style={{ border: '1px solid rgba(255, 68, 68, 0.25)', background: 'rgba(25, 10, 20, 0.65)' }}>
+              <div className={styles.panelTitle} style={{ color: '#ff4444' }}>
+                <ShieldAlert size={22} /> Advanced Real-Time Game Manipulation Override Engine
+              </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginTop: '1rem' }}>
             
@@ -1309,12 +1366,10 @@ export default function AdminDashboard() {
         </div>
 
         {/* Sliders and Odds controls */}
-        <div className={styles.controlGrid}>
-          
-          <div className={styles.glassPanel}>
-            <div className={styles.panelTitle}>
-              <Sliders size={20} color="var(--accent-primary)" /> Standard Mathematical Edge Configurations
-            </div>
+        <div className={styles.glassPanel}>
+          <div className={styles.panelTitle}>
+            <Sliders size={20} color="var(--accent-primary)" /> Standard Mathematical Edge Configurations
+          </div>
 
             {/* Aviator controls */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -1425,39 +1480,12 @@ export default function AdminDashboard() {
               ) : <Settings size={16} />}
               {isSaving ? 'Applying Configs...' : saveSuccess ? 'Configs Active!' : 'Apply System Odds'}
             </button>
-
-          </div>
-
-          {/* SVG Growth Chart Sidebar */}
-          <div className={styles.glassPanel} style={{ justifyContent: 'space-between' }}>
-            <div>
-              <div className={styles.panelTitle}>
-                <TrendingUp size={20} color="var(--accent-primary)" /> Platform Cumulative Growth Chart
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>
-                Visual cash flow trends matching platform margin indices.
-              </p>
-
-              {/* Dynamic Bar Charts */}
-              <div className={styles.chartContainer}>
-                <div className={styles.chartBar} style={{ height: '30%' }} />
-                <div className={styles.chartBar} style={{ height: '45%' }} />
-                <div className={styles.chartBar} style={{ height: '35%' }} />
-                <div className={styles.chartBar} style={{ height: '60%' }} />
-                <div className={styles.chartBar} style={{ height: '55%' }} />
-                <div className={styles.chartBar} style={{ height: '80%' }} />
-                <div className={styles.chartBar} style={{ height: `${Math.min(100, Math.max(10, growthPercent * 5))}%` }} />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
-                <Info size={14} color="var(--accent-primary)" /> Audit sandbox logs in the Next.js server console terminal.
-              </div>
-            </div>
-          </div>
-
         </div>
+      </>
+    )}
+
+    {activeTab === 'ledger' && (
+      <>
 
         {/* 🤖 AI Auto-Settlement Payment Agent Control Portal */}
         <div className={styles.ledgerSection} style={{ 
@@ -1876,9 +1904,13 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
+      </>
+    )}
 
+    {activeTab === 'telemetry' && (
+      <>
         {/* Live System Activity Feed */}
-        <div id="telemetry" className={styles.ledgerSection} style={{ background: 'rgba(5, 2, 10, 0.85)', border: '1px solid rgba(0, 230, 118, 0.2)', marginTop: '2.5rem' }}>
+        <div className={styles.ledgerSection} style={{ background: 'rgba(5, 2, 10, 0.85)', border: '1px solid rgba(0, 230, 118, 0.2)', marginTop: '2.5rem' }}>
           <div className={styles.panelTitle} style={{ color: '#00e676', borderBottom: '1px solid rgba(0, 230, 118, 0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Activity className="animate-pulse" size={20} color="#00e676" /> LIVE SYSTEM TELEMETRY AUDIT FEED
@@ -1952,6 +1984,8 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+      </>
+    )}
 
       </div>
     </div>

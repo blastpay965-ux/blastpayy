@@ -1023,4 +1023,31 @@
   box-shadow: none;
 }
 
+.navLink {
+  border: none !important;
+  background: transparent !important;
+  padding: 0.5rem 0.75rem !important;
+  outline: none !important;
+  font-family: inherit !important;
+  border-radius: 6px !important;
+  position: relative !important;
+}
+
+.navLinkActive {
+  color: #00e676 !important;
+  background: rgba(0, 230, 118, 0.08) !important;
+  text-shadow: 0 0 10px rgba(0, 230, 118, 0.3) !important;
+}
+
+.navLinkActive::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background-color: #00e676;
+  box-shadow: 0 0 8px #00e676;
+}
+
 
