@@ -106,22 +106,13 @@ export default function ProfilePage() {
                   <div className={styles.statValue}>
                     {balance.toFixed(2)} <span className={styles.currency}>NGN</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                    <button 
-                      className="btn btn-primary" 
-                      style={{ flex: 1 }}
-                      onClick={() => setIsWalletOpen(true)}
-                    >
-                      Deposit
-                    </button>
-                    <button 
-                      className="btn btn-secondary" 
-                      style={{ flex: 1 }}
-                      onClick={() => router.push('/withdraw')}
-                    >
-                      Withdraw
-                    </button>
-                  </div>
+                  <button 
+                    className="btn btn-secondary" 
+                    style={{marginTop: '1rem', width: '100%'}}
+                    onClick={() => router.push('/withdraw')}
+                  >
+                    Withdraw Funds
+                  </button>
                 </div>
 
                 <div className={styles.statCard}>
