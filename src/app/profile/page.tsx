@@ -273,7 +273,9 @@ export default function ProfilePage() {
                       <tbody>
                         {transactions.map((tx) => (
                           <tr key={tx.id}>
-                            <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{tx.id}</td>
+                            <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }} title={tx.id}>
+                              {tx.id.slice(0, 8)}...
+                            </td>
                             <td>
                               <span 
                                 className={styles.gameTag}
