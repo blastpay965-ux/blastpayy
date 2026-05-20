@@ -1,6 +1,22 @@
-import React, { ReactNode, useState, useEffect, useMemo } from 'react';
+import React, { ReactNode, useState, useEffect, useMemo, useCallback } from 'react';
 import styles from './GameLayout.module.css';
 import { Info } from 'lucide-react';
+
+// Inline avatar — zero network requests, zero lag
+// Generates a unique color per player name and shows their initial
+function PlayerAvatar({ name, isMe }: { name: string; isMe?: boolean }) {
+  const colors = ['#6366f1','#ec4899','#14b8a6','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'];
+  const color = colors[name.charCodeAt(0) % colors.length];
+  const initial = name.charAt(0).toUpperCase();
+  return (
+    <span
+      className={`${styles.avatar} ${isMe ? styles.myAvatar : ''}`}
+      style={{ background: color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', width: 20, height: 20, fontSize: 11, fontWeight: 800, color: '#fff', flexShrink: 0 }}
+    >
+      {initial}
+    </span>
+  );
+}
 
 interface Player {
   id: number | string;
@@ -21,6 +37,7 @@ interface GameLayoutProps {
 
 export default function GameLayout({ children, controls, history, players, instructions }: GameLayoutProps) {
   const [showInfo, setShowInfo] = useState(false);
+  const closeInfo = useCallback(() => setShowInfo(false), []);
   const [activeTab, setActiveTab] = useState<'all'|'my'|'top'>('all');
   const [fakePlayers, setFakePlayers] = useState<Player[]>([]);
 
@@ -114,11 +131,7 @@ export default function GameLayout({ children, controls, history, players, instr
             {displayedPlayers.map((p, idx) => (
               <div key={`${p.id}-${idx}`} className={`${styles.tableRow} ${p.winAmount ? styles.rowWon : ''} ${p.isMe ? styles.myRow : ''}`}>
                 <span className={styles.playerName}>
-                  <img 
-                    src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${p.name}`} 
-                    alt="avatar" 
-                    className={`${styles.avatar} ${p.isMe ? styles.myAvatar : ''}`} 
-                  /> 
+                  <PlayerAvatar name={p.name} isMe={p.isMe} />
                   {p.name}
                 </span>
                 <span>{p.bet.toFixed(2)}</span>
@@ -146,17 +159,24 @@ export default function GameLayout({ children, controls, history, players, instr
           )}
 
           {showInfo && instructions && (
-            <div className={styles.instructionsModal}>
-              <div className={styles.modalHeader}>
-                <span className={styles.modalTitle}>How to Play</span>
-                <button className={styles.closeBtn} onClick={() => setShowInfo(false)}>&times;</button>
+            <>
+              {/* Clicking the backdrop closes the modal */}
+              <div
+                style={{ position: 'absolute', inset: 0, zIndex: 49 }}
+                onClick={closeInfo}
+              />
+              <div className={styles.instructionsModal}>
+                <div className={styles.modalHeader}>
+                  <span className={styles.modalTitle}>How to Play</span>
+                  <button className={styles.closeBtn} onClick={closeInfo}>&times;</button>
+                </div>
+                <ol className={styles.instructionsList}>
+                  {instructions.map((inst, idx) => (
+                    <li key={idx}>{inst}</li>
+                  ))}
+                </ol>
               </div>
-              <ol className={styles.instructionsList}>
-                {instructions.map((inst, idx) => (
-                  <li key={idx}>{inst}</li>
-                ))}
-              </ol>
-            </div>
+            </>
           )}
 
           {children}
