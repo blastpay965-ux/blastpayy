@@ -28,9 +28,6 @@ export default function WithdrawPage() {
   const [accountNumber, setAccountNumber] = useState('');
   const [amount, setAmount] = useState('');
   
-  const [isResolving, setIsResolving] = useState(false);
-  const [resolvedName, setResolvedName] = useState('');
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successReceipt, setSuccessReceipt] = useState<{
     txId: string;
@@ -43,42 +40,6 @@ export default function WithdrawPage() {
 
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Resolve bank account details dynamically via our backend API
-  useEffect(() => {
-    if (accountNumber.length === 10 && bank) {
-      setIsResolving(true);
-      setResolvedName('');
-      setErrorMsg('');
-
-      const resolveAccount = async () => {
-        try {
-          const res = await fetch('/api/withdraw/resolve', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accountNumber, bankCode: bank }),
-          });
-          const result = await res.json();
-
-          if (res.ok && result.status === 'success') {
-            setResolvedName(result.data.account_name.toUpperCase());
-          } else {
-            setErrorMsg(result.error || 'Failed to verify account number.');
-          }
-        } catch (err) {
-          setErrorMsg('Verification system offline. Please try again.');
-        } finally {
-          setIsResolving(false);
-        }
-      };
-
-      const timer = setTimeout(resolveAccount, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setResolvedName('');
-      setIsResolving(false);
-    }
-  }, [accountNumber, bank]);
-
   const handleProceedWithdrawal = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -86,7 +47,6 @@ export default function WithdrawPage() {
     const val = parseFloat(amount);
     if (!bank) return setErrorMsg('Please select a payout destination bank.');
     if (accountNumber.length !== 10) return setErrorMsg('Please enter a valid 10-digit account number.');
-    if (!resolvedName) return setErrorMsg('Account number must be successfully verified.');
     if (isNaN(val) || val <= 0) return setErrorMsg('Please enter a valid withdrawal amount.');
     if (val > balance) return setErrorMsg('Insufficient funds in your casino wallet.');
 
@@ -107,7 +67,7 @@ export default function WithdrawPage() {
           amount: val,
           bankName: NIGERIAN_BANKS.find(b => b.code === bank)?.name || 'Payout Bank',
           accountNumber,
-          accountName: resolvedName,
+          accountName: user?.username ? user.username.toUpperCase() : 'CASINO PLAYER',
           date: new Date().toLocaleString(),
         });
       } else {
@@ -169,16 +129,6 @@ export default function WithdrawPage() {
                   onChange={e => setAccountNumber(e.target.value.replace(/\D/g, ''))}
                   disabled={isSubmitting}
                 />
-                {isResolving && (
-                  <div className={`${styles.resolver} ${styles.resolving}`}>
-                    <Loader2 size={12} className="animate-spin" /> Resolving NUBAN Account...
-                  </div>
-                )}
-                {resolvedName && (
-                  <div className={`${styles.resolver} ${styles.resolved}`}>
-                    <CheckCircle2 size={12} /> Account Verified: {resolvedName}
-                  </div>
-                )}
               </div>
 
               <div className={styles.formGroup}>
@@ -202,7 +152,7 @@ export default function WithdrawPage() {
               <button 
                 type="submit" 
                 className={`btn btn-primary ${styles.btnSubmit}`}
-                disabled={isSubmitting || isResolving}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>

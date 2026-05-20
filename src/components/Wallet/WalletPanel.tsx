@@ -52,45 +52,7 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
   const [withdrawBankName, setWithdrawBankName] = useState('');
   const [withdrawAccountNo, setWithdrawAccountNo] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('5000');
-  const [isResolving, setIsResolving] = useState(false);
-  const [resolvedName, setResolvedName] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-
-  // Resolve bank account details dynamically inside the modal
-  useEffect(() => {
-    if (withdrawAccountNo.length === 10 && withdrawBankName) {
-      setIsResolving(true);
-      setResolvedName('');
-      setErrorMsg('');
-
-      const resolveAccount = async () => {
-        try {
-          const res = await fetch('/api/withdraw/resolve', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accountNumber: withdrawAccountNo, bankCode: withdrawBankName }),
-          });
-          const result = await res.json();
-
-          if (res.ok && result.status === 'success') {
-            setResolvedName(result.data.account_name.toUpperCase());
-          } else {
-            setErrorMsg(result.error || 'Failed to verify account number.');
-          }
-        } catch (err) {
-          setErrorMsg('Verification system offline. Please try again.');
-        } finally {
-          setIsResolving(false);
-        }
-      };
-
-      const timer = setTimeout(resolveAccount, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setResolvedName('');
-      setIsResolving(false);
-    }
-  }, [withdrawAccountNo, withdrawBankName]);
 
   // Dedicated Business Account Coordinates
   const computedAccountNumber = '8055865414';
@@ -206,7 +168,6 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
     const val = parseFloat(withdrawAmount);
     if (!withdrawBankName) return alert('Please select a payout destination bank.');
     if (withdrawAccountNo.length !== 10) return alert('Please enter a valid 10-digit account number.');
-    if (!resolvedName) return alert('Account number must be successfully verified.');
     if (isNaN(val) || val <= 0) return alert('Please enter a valid withdrawal amount.');
     if (val > balance) return alert('Insufficient funds in your casino wallet.');
 
@@ -227,7 +188,6 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
         setWithdrawBankName('');
         setWithdrawAccountNo('');
         setWithdrawAmount('');
-        setResolvedName('');
         syncWallet();
         setTimeout(() => setMessage(''), 4000);
       } else {
@@ -501,16 +461,6 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
                         placeholder="e.g. 0123456789"
                         disabled={isClearing}
                       />
-                      {isResolving && (
-                        <div style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <Loader2 size={12} className="animate-spin" /> Resolving NUBAN Account...
-                        </div>
-                      )}
-                      {resolvedName && (
-                        <div style={{ color: '#00e676', fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
-                          <CheckCircle2 size={12} /> Account Verified: {resolvedName}
-                        </div>
-                      )}
                     </div>
 
                     <div>
@@ -543,7 +493,7 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
                   <button 
                     className={`btn btn-primary ${styles.submitBtn}`}
                     onClick={handleWithdraw}
-                    disabled={isClearing || isResolving}
+                    disabled={isClearing}
                   >
                     {isClearing ? 'Processing Request...' : 'Request Payout'}
                   </button>
