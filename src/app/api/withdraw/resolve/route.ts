@@ -3,9 +3,6 @@ import { createSupabaseServer } from '@/lib/supabase-server';
 import { getProfile } from '@/lib/dal';
 import { isRateLimited, rateLimitedResponse, getClientIp, checkBodySize, sanitizeInput } from '@/lib/security';
 
-const NIGERIAN_SURNAMES = ['OLUWASEUN', 'OKOYE', 'BALOGUN', 'CHIDI', 'EZE', 'ADEBAYO', 'DANJUMA', 'BELLO'];
-const NIGERIAN_FIRSTNAMES = ['SHINA', 'CHUKWUMA', 'FEMI', 'IBRAHIM', 'CHIOMA', 'TUNDE', 'YEMI', 'EMEKA'];
-
 export async function POST(request: Request) {
   const sizeError = checkBodySize(request);
   if (sizeError) return sizeError;
@@ -36,34 +33,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Destination bank code is required.' }, { status: 400 });
     }
 
-    // Dynamic High-Fidelity NUBAN Resolver:
-    // Generates a realistic Nigerian full name based on the account number + player's username
-    const cleanUsername = profile.username.replace(/[^a-zA-Z]/g, '').toUpperCase();
-    
-    // Choose a consistent surname and firstname based on the account number digits
-    const seed = parseInt(accountNumber.slice(-3)) || 0;
-    const surname = NIGERIAN_SURNAMES[seed % NIGERIAN_SURNAMES.length];
-    
-    // If username is reasonably long, use it as part of the resolved name to make it feel personalized!
-    let resolvedName = '';
-    if (cleanUsername && cleanUsername.length >= 3) {
-      resolvedName = `${cleanUsername} ${surname}`;
-    } else {
-      const firstname = NIGERIAN_FIRSTNAMES[(seed >> 2) % NIGERIAN_FIRSTNAMES.length];
-      resolvedName = `${firstname} ${surname}`;
+    const flwSecret = process.env.FLUTTERWAVE_SECRET_KEY;
+    if (!flwSecret) {
+      return NextResponse.json({ error: 'Payment gateway secret key is missing from environment config.' }, { status: 500 });
     }
 
-    // Limit length and keep clean
-    resolvedName = resolvedName.slice(0, 32).trim();
+    try {
+      const flwResponse = await fetch('https://api.flutterwave.com/v3/accounts/resolve', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${flwSecret}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          account_number: accountNumber,
+          account_bank: bankCode
+        })
+      });
 
-    return NextResponse.json({
-      status: 'success',
-      data: {
-        account_number: accountNumber,
-        account_name: resolvedName,
-        bank_code: bankCode
+      const result = await flwResponse.json();
+
+      if (flwResponse.ok && result.status === 'success') {
+        return NextResponse.json({
+          status: 'success',
+          data: {
+            account_number: result.data.account_number,
+            account_name: result.data.account_name,
+            bank_code: bankCode
+          }
+        });
+      } else {
+        return NextResponse.json({
+          error: result.message || 'Unable to resolve live bank account details. Verify your bank & account number.'
+        }, { status: 400 });
       }
-    });
+    } catch (err: any) {
+      return NextResponse.json({ error: 'Live verification gateway offline. Please try again.' }, { status: 502 });
+    }
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
   }
