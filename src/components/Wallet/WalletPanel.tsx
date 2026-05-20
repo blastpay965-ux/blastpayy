@@ -56,7 +56,7 @@ export default function WalletPanel({ isOpen, onClose, initialTab = 'deposit' }:
 
   // Dedicated Business Account Coordinates
   const computedAccountNumber = '8055865414';
-  const virtualAccountName = 'Oyebamiji Shinaayomi Paul';
+  const virtualAccountName = 'BlastPay';
   const virtualBankName = 'OPay';
 
   const config = {
