@@ -32,7 +32,8 @@ function generatePlayers() {
 
 async function updateGameState() {
   const now = Date.now();
-  const delta = (now - gameState.lastUpdate) / 1000;
+  // Cap delta at 1.0 second to prevent massive spikes when Vercel serverless functions wake from sleep
+  const delta = Math.min((now - gameState.lastUpdate) / 1000, 1.0);
   gameState.lastUpdate = now;
 
   if (gameState.status === 'betting') {
@@ -82,7 +83,8 @@ async function updateGameState() {
       }
     }
   } else if (gameState.status === 'playing') {
-    gameState.multiplier += (gameState.multiplier * 0.15) * delta;
+    // 0.07 makes it climb at a moderate, realistic Aviator pace
+    gameState.multiplier += (gameState.multiplier * 0.07) * delta;
 
     gameState.players.forEach((p) => {
       if (p.cashoutTarget && !p.cashedOutAt && gameState.multiplier >= p.cashoutTarget) {
